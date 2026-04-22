@@ -1,0 +1,103 @@
+---
+title: 'Global Hotkeys for Quick Proxy Control'
+description: 'Assign system-wide keyboard shortcuts to toggle system proxy, switch Clash modes, and control the app window without opening the UI.'
+keywords: ['clash verge rev', 'hotkeys', 'global shortcuts', 'keyboard shortcuts', 'proxy toggle', 'tun mode']
+---
+
+Global hotkeys let you trigger common proxy actions from anywhere on your desktop — even when the Clash Verge Rev window is minimized, hidden, or in the background. You can bind shortcuts to switch proxy modes, toggle TUN, reactivate profiles, or open the dashboard with a single key combination.
+
+## Enable global hotkeys
+
+Global hotkeys are enabled by default. To confirm or change this setting, go to **Settings > Advanced > Enable Global Hotkey** and toggle the switch.
+
+<Note>
+When global hotkeys are disabled, shortcuts still work but only fire when the Clash Verge Rev window is visible and focused. Enable global hotkeys to make them fire system-wide regardless of window state.
+</Note>
+
+## Available actions
+
+The following actions can be bound to hotkeys:
+
+<CardGroup cols={2}>
+  <Card title="open_or_close_dashboard" icon="layout-dashboard">
+    Toggle the main application window open or closed.
+  </Card>
+  <Card title="toggle_system_proxy" icon="shield">
+    Enable or disable the system HTTP/HTTPS proxy.
+  </Card>
+  <Card title="toggle_tun_mode" icon="network">
+    Enable or disable TUN mode for transparent proxying.
+  </Card>
+  <Card title="clash_mode_rule" icon="filter">
+    Switch the Clash outbound mode to Rule.
+  </Card>
+  <Card title="clash_mode_global" icon="globe">
+    Switch the Clash outbound mode to Global.
+  </Card>
+  <Card title="clash_mode_direct" icon="arrow-right">
+    Switch the Clash outbound mode to Direct (bypass proxy).
+  </Card>
+  <Card title="reactivate_profiles" icon="refresh-cw">
+    Re-apply and reload all active profiles without restarting.
+  </Card>
+  <Card title="entry_lightweight_mode" icon="minimize">
+    Enter lightweight mode to reduce resource usage.
+  </Card>
+  <Card title="quit" icon="power">
+    Quit the application entirely.
+  </Card>
+</CardGroup>
+
+<Note>
+On macOS, `Cmd+Q` and `Cmd+W` are reserved as system hotkeys that map to `quit` and `hide` respectively. These cannot be reassigned.
+</Note>
+
+## Configuring hotkeys
+
+<Steps>
+  <Step title="Open hotkey settings">
+    Navigate to **Settings > Advanced > Hotkeys**. You will see a list of configurable action slots.
+  </Step>
+  <Step title="Add or edit a binding">
+    Click the input field next to the action you want to bind. Press the key combination you want to assign. The field records your keypress and displays it.
+  </Step>
+  <Step title="Save">
+    Click **Save** or confirm the dialog. The shortcut is registered immediately — no restart required.
+  </Step>
+</Steps>
+
+## Key format
+
+Hotkeys are stored internally in the format `function_name,Modifier+Key`. When configuring via the UI, you press the combination directly. If you edit `verge.yaml` manually, use this format in the `hotkeys` array:
+
+```yaml
+hotkeys:
+  - "toggle_system_proxy,Ctrl+Shift+P"
+  - "clash_mode_rule,Ctrl+Shift+R"
+  - "clash_mode_global,Ctrl+Shift+G"
+  - "clash_mode_direct,Ctrl+Shift+D"
+  - "open_or_close_dashboard,Ctrl+Shift+W"
+```
+
+### Supported modifiers
+
+| Modifier | Windows / Linux | macOS |
+|----------|----------------|-------|
+| Control  | `Ctrl`         | `Ctrl` or `Cmd` |
+| Shift    | `Shift`        | `Shift` |
+| Alt      | `Alt`          | `Option` |
+| Super    | `Super` / `Win` | `Cmd` |
+
+Combine modifiers with a key using `+`, for example `Ctrl+Shift+P` or `Alt+F1`.
+
+<Warning>
+Avoid using shortcuts that conflict with system-level or application-level bindings (such as `Ctrl+C`, `Ctrl+V`, `Alt+Tab`, or OS task-switcher shortcuts). Conflicting registrations may silently fail or produce unexpected behavior in other applications.
+</Warning>
+
+## Behavior when global hotkeys are disabled
+
+When **Enable Global Hotkey** is turned off, hotkeys are scoped to the app window. They only fire when the Clash Verge Rev window is both visible and focused. This is useful if you want keyboard shortcuts that do not interfere with other applications while working in a different window.
+
+<Tip>
+If a hotkey stops responding after a system sleep or display switch, try toggling the **Enable Global Hotkey** setting off and back on to re-register all shortcuts.
+</Tip>

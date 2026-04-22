@@ -1,0 +1,138 @@
+---
+title: "System Proxy Setup in Clash Verge Rev"
+description: "Configure OS-level HTTP, HTTPS, and SOCKS proxy settings in Clash Verge Rev so browsers and apps route traffic through Mihomo without manual per-app setup."
+keywords: ["system proxy", "clash verge rev", "proxy guard", "PAC mode", "bypass list", "sysproxy"]
+---
+
+System proxy registers the Mihomo local port as your operating system's HTTP, HTTPS, and SOCKS proxy. Once enabled, browsers, terminals, and most desktop applications automatically route their traffic through Clash without any per-app configuration. It is the fastest way to start proxying on a new machine, covering any app that honours OS proxy settings — though it does not capture apps that open raw sockets or manage their own network stack. For full-system coverage, see [TUN mode](/configuration/tun-mode).
+
+## Enable system proxy
+
+<Steps>
+  <Step title="Open Settings">
+    Click the gear icon in the left sidebar to open the Settings page.
+  </Step>
+  <Step title="Locate the System section">
+    The **System** section appears at the top of the Settings page.
+  </Step>
+  <Step title="Toggle System Proxy on">
+    Click the **System Proxy** toggle. Clash Verge Rev immediately registers the Mihomo mixed port (default `7897`) as the OS-level proxy. The tray icon updates to indicate the proxy is active.
+  </Step>
+</Steps>
+
+<Note>
+  System proxy only affects apps that respect OS proxy settings. Apps with their own network stack are not captured. Use [TUN mode](/configuration/tun-mode) for complete traffic coverage.
+</Note>
+
+## Proxy Guard
+
+Some applications — antivirus tools, VPN clients, corporate IT agents — reset the OS proxy when they launch or exit. Proxy Guard prevents this by periodically checking and restoring the proxy setting.
+
+<Tabs>
+  <Tab title="Enable Proxy Guard">
+    Open the **System Proxy** detail dialog by clicking the settings icon next to the toggle. Switch on **Proxy Guard**. Clash Verge Rev will poll the OS proxy setting at the configured interval and restore it if another process has changed it.
+  </Tab>
+  <Tab title="Adjust the polling interval">
+    The polling interval is controlled by `proxy_guard_duration` in `verge.yaml`, expressed in seconds. The default is `10` seconds.
+
+    ```yaml verge.yaml
+    proxy_guard_duration: 10
+    ```
+
+    Lower values recover faster but use slightly more CPU.
+  </Tab>
+</Tabs>
+
+<Warning>
+  Do not enable Proxy Guard if another application (such as a corporate VPN) is intentionally managing the system proxy. Both tools will continuously override each other, causing instability.
+</Warning>
+
+## Bypass list
+
+The bypass list contains hosts and IP ranges that connect directly, skipping the proxy entirely. It is essential for loopback addresses, LAN hosts, and internal services that should not be tunnelled through Clash.
+
+### Default bypass entries
+
+When **Always use default bypass** is enabled (the default), Clash Verge Rev prepends a built-in platform-specific bypass list to whatever custom entries you provide.
+
+<Tabs>
+  <Tab title="Windows">
+    ```text
+    localhost;127.*;192.168.*;10.*;172.16.*;172.17.*;172.18.*;172.19.*;172.20.*;
+    172.21.*;172.22.*;172.23.*;172.24.*;172.25.*;172.26.*;172.27.*;172.28.*;
+    172.29.*;172.30.*;172.31.*;<local>
+    ```
+    Entries are semicolon-separated.
+  </Tab>
+  <Tab title="macOS">
+    ```text
+    127.0.0.1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,localhost,*.local,<local>
+    ```
+    Entries are comma-separated.
+  </Tab>
+  <Tab title="Linux">
+    ```text
+    localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12,::1
+    ```
+    Entries are comma-separated.
+  </Tab>
+</Tabs>
+
+### Custom bypass
+
+1. Open the **System Proxy** settings dialog.
+2. Disable **Always use default bypass** if you want full control, or leave it enabled to extend the defaults.
+3. Add entries to the bypass field — one per line. Wildcards (`*`) are supported for IP ranges and domain suffixes.
+
+<Tip>
+  Enable **Bypass format check** (`enable_bypass_check`) to validate entries before saving. Invalid patterns are highlighted, preventing Clash from applying a malformed bypass list.
+</Tip>
+
+## PAC mode
+
+Proxy Auto-Config (PAC) mode uses a JavaScript function to decide, per URL, whether to proxy or connect directly. It gives finer-grained routing at the OS level than a static bypass list.
+
+<Steps>
+  <Step title="Open the System Proxy dialog">
+    Click the settings icon next to the System Proxy toggle.
+  </Step>
+  <Step title="Enable PAC mode">
+    Switch on **Use PAC mode** (`proxy_auto_config: true`). The bypass list is replaced with a script editor.
+  </Step>
+  <Step title="Edit the PAC script">
+    Click **Edit PAC** to open the Monaco editor with the current script. The default script routes all traffic through the mixed port:
+
+    ```javascript
+    function FindProxyForURL(url, host) {
+      return "PROXY 127.0.0.1:7897; SOCKS5 127.0.0.1:7897; DIRECT;";
+    }
+    ```
+
+    Modify the function to implement your routing rules. Standard PAC helpers like `isInNet`, `dnsDomainIs`, and `shExpMatch` are available.
+  </Step>
+  <Step title="Save and apply">
+    Click **Save** in the editor, then **Save** in the dialog. The proxy is briefly toggled to apply the new PAC URL.
+  </Step>
+</Steps>
+
+<Note>
+  PAC mode and the bypass list are mutually exclusive. When PAC is active, all routing decisions live inside the script.
+</Note>
+
+## `verge.yaml` reference
+
+<AccordionGroup>
+  <Accordion title="System proxy fields">
+    | Field | Type | Default | Description |
+    |---|---|---|---|
+    | `enable_system_proxy` | `bool` | `false` | Enable or disable the OS-level proxy. |
+    | `enable_proxy_guard` | `bool` | `false` | Restore the proxy when overridden by other apps. |
+    | `proxy_guard_duration` | `u64` | `10` | Guard polling interval in seconds. |
+    | `system_proxy_bypass` | `string` | platform defaults | Bypass list entries (format varies by platform). |
+    | `use_default_bypass` | `bool` | `true` | Prepend built-in bypass entries to the custom list. |
+    | `enable_bypass_check` | `bool` | `true` | Validate bypass entries before applying. |
+    | `proxy_auto_config` | `bool` | `false` | Use a PAC script instead of manual proxy settings. |
+    | `pac_file_content` | `string` | — | Inline PAC script content. |
+    | `proxy_host` | `string` | `127.0.0.1` | Host address registered as the proxy server. |
+  </Accordion>
+</AccordionGroup>

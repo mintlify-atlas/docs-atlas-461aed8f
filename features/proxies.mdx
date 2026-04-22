@@ -1,0 +1,116 @@
+---
+title: 'Proxies: Manage Nodes and Groups in Clash Verge'
+description: "Browse proxy groups, switch nodes, run per-node latency tests, filter by name, and configure proxy chaining in Clash Verge Rev's Proxies page."
+keywords: ['clash verge', 'proxies', 'proxy groups', 'node selection', 'latency test', 'URLTest', 'Selector', 'proxy chain']
+---
+
+The Proxies page in Clash Verge Rev is the main interface for viewing and controlling all proxy groups and nodes loaded from your active profile. It lets you switch between traffic routing modes, select specific nodes within groups, measure latency, and — when needed — build a proxy chain where traffic hops through multiple nodes in sequence.
+
+## Routing modes
+
+Three global routing modes are available via the button group at the top of the page:
+
+| Mode | Behavior |
+|------|----------|
+| **Rule** | Traffic is routed according to the rules defined in the active profile. Each proxy group acts as a target for matched rules. |
+| **Global** | All traffic goes through a single proxy group called `GLOBAL`, regardless of rules. |
+| **Direct** | All traffic bypasses the proxy entirely. The proxy list is hidden in this mode. |
+
+<Note>
+Switching modes closes all active connections when the **Auto close connections** setting is enabled.
+</Note>
+
+## Proxy group types
+
+Clash Verge Rev displays all proxy groups defined in your active profile. Each group has a type that controls how a node is selected:
+
+<AccordionGroup>
+  <Accordion title="Selector">
+    You choose the active node manually by clicking it. The selected node persists until you change it.
+  </Accordion>
+  <Accordion title="URLTest">
+    Mihomo periodically tests the latency of all nodes in the group and automatically selects the fastest one. A pinned node (shown with a 📌 icon) overrides the automatic selection until you reset it.
+  </Accordion>
+  <Accordion title="Fallback">
+    Mihomo tries nodes in order and switches to the next available one when the current node fails a health check.
+  </Accordion>
+  <Accordion title="LoadBalance">
+    Connections are distributed across multiple nodes to spread traffic load.
+  </Accordion>
+  <Accordion title="Relay">
+    Traffic is forwarded through a chain of nodes defined in the profile configuration. The chain is fixed and not user-configurable from this page.
+  </Accordion>
+</AccordionGroup>
+
+## Switching nodes
+
+<Steps>
+  <Step title="Locate the group">
+    Scroll the proxy list to find the group you want to change. In Rule mode, a sidebar navigator lets you jump directly to any group by name.
+  </Step>
+  <Step title="Select a node">
+    Click any node in the group to make it the active selection. The selected node is highlighted with a colored left border and a check icon.
+  </Step>
+</Steps>
+
+<Info>
+Only **Selector**, **URLTest**, and **Fallback** groups allow manual node switching. **LoadBalance** and **Relay** groups do not respond to manual node clicks.
+</Info>
+
+## Latency testing
+
+Each proxy group header contains a toolbar with the following controls:
+
+- **Delay check** (`NetworkCheck` icon) — tests all nodes in the group against the configured test URL and displays the result in milliseconds. Color coding: green for fast, amber for acceptable, red for slow or timed out.
+- **Custom test URL** (`WifiTethering` icon) — opens a text field where you can enter a URL to use instead of the default `http://cp.cloudflare.com/generate_204`.
+- **Sort** — cycles through three sort orders: default (profile order), by delay (ascending), and by name (alphabetical).
+- **Filter** — opens a search box that filters the node list within the group by name. Supports case-sensitive matching, whole-word matching, and regular expressions.
+- **Locate** — scrolls the list to the currently selected node within the group.
+- **Show/hide type badges** — toggles the display of protocol type tags (e.g., `vmess`, `ss`, `UDP`, `TFO`) on each node.
+
+<Tip>
+Individual nodes display a **Check** label on hover. Clicking it tests only that node without running the full group check.
+</Tip>
+
+## Node display modes
+
+Nodes are rendered in one of two layouts depending on available width:
+
+- **Mini (grid)** — a compact card showing the node name, current sub-node (for nested groups), type badges, and latency. Used when multiple columns fit the window.
+- **Full (list)** — a taller row with the same information, used in narrower layouts.
+
+Both layouts show the same data. The number of columns adjusts automatically based on window width.
+
+## Provider proxies
+
+When your profile uses **proxy providers** (remote node lists fetched separately from the main config), those nodes appear within groups tagged with the provider name. The **Providers** button in the page header opens a panel where you can trigger a health check for each provider and see when it was last updated.
+
+<Note>
+Latency testing is not available for provider nodes directly from the node row. Use the group-level delay check or the provider health check instead.
+</Note>
+
+## Proxy chain mode
+
+Proxy chaining lets you route traffic through a sequence of nodes instead of a single one. Toggle chain mode with the **Chain** button in the page header.
+
+<Steps>
+  <Step title="Enable chain mode">
+    Click the **Chain** button. The layout splits: the left panel shows only Selector groups; the right panel shows the chain builder.
+  </Step>
+  <Step title="Build the chain">
+    Click nodes in the left panel to add them to the chain in the right panel. The first node added is labeled **Entry Node** and the last is labeled **Exit Node**. At least two nodes are required.
+  </Step>
+  <Step title="Reorder or remove nodes">
+    Drag items in the chain panel to reorder them. Click the delete icon on any item to remove it.
+  </Step>
+  <Step title="Connect">
+    Click **Connect**. Clash Verge Rev injects the chain configuration into the running Mihomo core and routes traffic through the sequence.
+  </Step>
+  <Step title="Disconnect">
+    Click **Disconnect** (the button turns red when connected) to clear the chain and restore direct group selection.
+  </Step>
+</Steps>
+
+<Warning>
+Proxy chaining requires the Mihomo core to support nested proxy configuration. Each node in the chain must be reachable from the previous one. Misconfigured chains will fail silently at the connection step.
+</Warning>

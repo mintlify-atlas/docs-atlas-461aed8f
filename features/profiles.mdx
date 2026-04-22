@@ -1,0 +1,143 @@
+---
+title: 'Profiles: Load and Manage Clash Configs in Clash Verge'
+description: 'Import remote subscriptions or local YAML files, activate profiles, set auto-update intervals, and layer Merge and Script overrides in Clash Verge Rev.'
+keywords: ['clash verge', 'profiles', 'subscription', 'remote profile', 'local profile', 'merge', 'script', 'auto update']
+---
+
+Profiles are the configuration files that tell Mihomo (the Clash Meta core) which proxies to use, how to group them, and which rules determine where traffic goes. Clash Verge Rev supports two primary profile types — remote subscriptions and local files — along with two special overlay types, Merge and Script, that are always applied on top of the active profile. This page covers how to import, activate, update, and edit profiles.
+
+## Profile types
+
+<Tabs>
+  <Tab title="Remote">
+    A remote profile is a YAML subscription fetched from a URL. Clash Verge Rev downloads the file, parses it, and stores it locally. You can configure the update interval so the app refreshes it automatically.
+
+    Remote profiles show upload/download usage and expiry date when the server returns a `Subscription-UserInfo` header.
+  </Tab>
+  <Tab title="Local">
+    A local profile is a YAML file you import from disk. Drag a `.yaml` or `.yml` file onto the Profiles page, or use the **New** button to create one from scratch.
+
+    Local profiles do not have a remote URL and cannot be auto-updated.
+  </Tab>
+  <Tab title="Merge">
+    Merge is an overlay YAML file that is merged into the active profile after it loads. Use it to add or override keys — such as additional rules or DNS settings — without editing the source profile directly.
+
+    There is one Merge config per profile. Changes in the Merge editor take effect after the profile is re-activated.
+  </Tab>
+  <Tab title="Script">
+    Script is a JavaScript file (run via the QuickJS engine) that receives the parsed profile as an argument and returns a modified version. It runs after the Merge step.
+
+    Use Script for transformations that are too complex to express in YAML — for example, dynamically generating proxy groups or filtering nodes by name pattern.
+  </Tab>
+</Tabs>
+
+<Note>
+Only one profile (Remote or Local) can be active at a time. Merge and Script overlays are always applied on top of whichever profile is currently active.
+</Note>
+
+## Importing a profile
+
+<Tabs>
+  <Tab title="From a URL">
+    <Steps>
+      <Step title="Paste the subscription URL">
+        Type or paste an `http://` or `https://` URL into the text field at the top of the Profiles page. You can also click the **Paste** icon to read from the clipboard automatically.
+      </Step>
+      <Step title="Click Import">
+        Click the **Import** button. Clash Verge Rev fetches the URL directly. If the initial fetch fails, it automatically retries using the Clash proxy itself as a bootstrap.
+      </Step>
+      <Step title="Verify the new profile appears">
+        The new profile card appears in the list showing the name, source domain, last updated time, and (if provided) subscription usage and expiry.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="From a local file">
+    <Steps>
+      <Step title="Drag the file onto the page">
+        Drag a `.yaml` or `.yml` file from your file manager onto the Profiles page. Clash Verge Rev creates a new local profile entry from the file contents.
+      </Step>
+      <Step title="Or use the New button">
+        Click **New** to open the profile viewer and paste YAML directly into the editor.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Activating a profile
+
+Click a profile card to make it active. Clash Verge Rev:
+
+1. Applies the selected profile's YAML to the running Mihomo core.
+2. Runs the Merge overlay on top of it.
+3. Runs the Script overlay.
+4. Closes all existing connections (the new routing configuration takes effect immediately).
+
+The active profile is highlighted with a distinct background. Only one profile can be active at a time.
+
+<Info>
+If you click a profile that is already active, nothing happens unless you use the **Re-activate** button (flame icon in the toolbar), which forces a full re-apply of the current profile through the Merge and Script pipeline.
+</Info>
+
+## Updating remote profiles
+
+<CardGroup cols={2}>
+  <Card title="Manual update" icon="refresh">
+    Click the refresh icon on any remote profile card to fetch the latest version immediately. The icon spins while the update is in progress.
+  </Card>
+  <Card title="Update all" icon="list-restart">
+    Click the **Update All** button (refresh icon in the page toolbar) to queue an update for every remote profile at once.
+  </Card>
+</CardGroup>
+
+### Auto-update interval
+
+Right-click a profile card and choose **Edit Info** to configure an `update_interval` in minutes. When set, the profile updates automatically in the background on that schedule. The next scheduled update time is shown on the card (click the last-updated timestamp to toggle between last update and next update).
+
+<Tip>
+If a remote profile server provides a `profile-update-interval` response header, Clash Verge Rev uses that value as the default interval when you first import the profile.
+</Tip>
+
+## Context menu options
+
+Right-click any profile card to open its context menu:
+
+| Option | Description |
+|--------|-------------|
+| **Select** | Force-activate the profile even if it is already current. |
+| **Edit Info** | Change the profile name, description, update interval, User-Agent, proxy options, and TLS settings. |
+| **Edit File** | Open the raw YAML in the built-in editor. |
+| **Edit Rules** | Open the per-profile rules override editor. |
+| **Edit Proxies** | Open the per-profile proxy override editor. |
+| **Edit Groups** | Open the per-profile proxy group override editor. |
+| **Extend Config (Merge)** | Open the Merge YAML overlay editor for this profile. |
+| **Extend Script** | Open the Script JavaScript overlay editor for this profile. |
+| **Share QR Code** | Display a QR code encoding the subscription URL. |
+| **Open File** | Open the profile YAML file in the system default editor. |
+| **Update** | Fetch the latest version without using a proxy. |
+| **Update via Proxy** | Fetch the latest version using the system proxy or Clash proxy. |
+| **Delete** | Remove the profile. If it was active, the Merge and Script pipeline re-runs without it. |
+
+## Reordering profiles
+
+Drag any profile card by the drag handle (the grid icon on the left of the card) to reorder it in the list. Reordering is cosmetic only and does not affect which profile is active.
+
+## Batch operations
+
+Click the **Batch** button (checkbox icon in the toolbar) to enter batch selection mode. In this mode:
+
+- Click profile cards to select or deselect them.
+- Use the select-all toggle in the toolbar to select every profile at once.
+- Click the **Delete** button to remove all selected profiles in one action.
+- Click **Done** to exit batch mode.
+
+## Merge and Script editors
+
+The Merge and Script sections appear below the main profile list, separated by a divider. They always apply to the currently active profile and cannot be independently activated or deactivated.
+
+<Warning>
+Edits made in the Merge or Script editors take effect only after you save and then re-activate the profile (or click **Re-activate**). Saving alone does not reload the Mihomo core.
+</Warning>
+
+## Viewing the runtime config
+
+Click the **Runtime Config** button (document icon in the toolbar) to inspect the final merged YAML that Clash Verge Rev has loaded into Mihomo — after the active profile, Merge overlay, and Script overlay have all been combined. This is useful for debugging unexpected routing behavior.

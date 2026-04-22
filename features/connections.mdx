@@ -1,0 +1,96 @@
+---
+title: 'Connections: Monitor Live Network Traffic in Clash Verge'
+description: 'Monitor active and closed connections in Clash Verge Rev: inspect metadata, sort by speed, filter by host, and close connections individually or in bulk.'
+keywords: ['clash verge', 'connections', 'network connections', 'active connections', 'traffic monitor', 'close connections', 'connection details']
+---
+
+The Connections page in Clash Verge Rev shows every network connection currently being handled by the Mihomo proxy core. You can monitor real-time upload and download speeds, inspect the full connection metadata, sort and filter connections, and close them individually or in bulk. Connections that have already closed are kept in a separate tab for post-hoc inspection.
+
+<Note>
+Only connections that pass through the Clash proxy are listed here. Traffic that bypasses the proxy (for example, connections matched by a `DIRECT` rule that goes directly to the network interface) does not appear.
+</Note>
+
+## Page layout
+
+The top of the page shows two running totals:
+
+- **Downloaded** — cumulative bytes received across all connections since the proxy started.
+- **Uploaded** — cumulative bytes sent across all connections since the proxy started.
+
+The rest of the page is divided into two tabs:
+
+| Tab | Contents |
+|-----|----------|
+| **Active** | Connections currently open. Count shown next to the tab label. |
+| **Closed** | Connections that have finished. Count shown next to the tab label. |
+
+## Connection information
+
+Each connection entry displays:
+
+- **Host** — the destination hostname or IP address and port.
+- **Network** — the transport protocol (`TCP` or `UDP`).
+- **Type** — the proxy chain used, e.g., `Shadowsocks` → `ProxyGroup`.
+- **Process** — the name of the application that opened the connection (when process detection is enabled).
+- **Upload speed** — current outbound throughput.
+- **Download speed** — current inbound throughput.
+- **Upload total / Download total** — cumulative bytes transferred on this connection.
+- **Start time** — when the connection was established.
+
+## List and table views
+
+Toggle between two display modes using the layout button in the page header:
+
+<Tabs>
+  <Tab title="List view">
+    A scrollable vertical list. Each row shows a summary of the connection. Useful for monitoring a moderate number of connections at a glance.
+  </Tab>
+  <Tab title="Table view">
+    A sortable, column-based table. Columns can be reordered and toggled using the column manager. Useful when you need to compare many connections or sort by a specific attribute.
+  </Tab>
+</Tabs>
+
+## Sorting connections
+
+In list view, use the sort dropdown to order connections by:
+
+- **Default** — most recently started connections appear first.
+- **Upload speed** — connections with the highest current upload rate appear first.
+- **Download speed** — connections with the highest current download rate appear first.
+
+The table view allows sorting by clicking any column header.
+
+## Searching and filtering
+
+The search box filters connections by host, destination IP, or process name simultaneously. Results update as you type. The active/closed tab counts do not update based on the search — they always reflect the full unfiltered totals.
+
+## Closing connections
+
+<CardGroup cols={2}>
+  <Card title="Close a single connection" icon="x">
+    In list view, hover over a connection row and click the close button that appears. In table view, use the action column. Closed connections move to the **Closed** tab immediately.
+  </Card>
+  <Card title="Close all connections" icon="trash">
+    Click the **Close All** button in the page header to terminate every active connection at once. This is useful after switching profiles or proxy groups to force applications to re-establish connections through the new route.
+  </Card>
+</CardGroup>
+
+## Connection detail panel
+
+Click any connection row (in either list or table view) to open a detail panel with the full connection metadata, including:
+
+- Source address and port.
+- Destination address and port.
+- Full proxy chain breakdown.
+- Rule that matched the connection (e.g., `DOMAIN-SUFFIX,github.com,Proxy`).
+- Start time and duration.
+
+The detail panel also works for connections in the **Closed** tab, letting you inspect completed sessions.
+
+## Cleared closed connections
+
+When the **Closed** tab is active and contains entries, a **Clear** button appears in the lower-right corner. Click it to remove all closed connection records from the list. This does not affect active connections.
+
+<Info>
+Closed connection history is held in memory for the current session only. Restarting Clash Verge Rev or the Mihomo core clears the closed connections list.
+</Info>

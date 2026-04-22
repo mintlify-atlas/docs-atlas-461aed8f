@@ -1,23 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "name": "Clash Verge Rev",
+  "projectType": "saas",
+  "projectName": "Clash Verge Rev",
+  "projectDescription": "A modern, cross-platform GUI proxy client built on Tauri and Mihomo (Clash Meta), offering profile management, TUN mode, system proxy control, and advanced rule editing for Windows, macOS, and Linux.",
   "theme": "almond",
-  "colors": {
-    "primary": "#d87de5",
-    "light": "#9a82fc"
-  },
-  "favicon": "https://media.brand.dev/0183303b-8abd-4e7f-a280-be185ac034cc.png",
-  "navbar": {
-    "primary": {
-      "type": "github",
-      "href": "https://github.com/clash-verge-rev/clash-verge-rev"
-    }
-  },
-  "footer": {
-    "socials": {
-      "github": "https://github.com/clash-verge-rev/clash-verge-rev"
-    }
-  },
+  "primaryColor": "#d87de5",
+  "lightColor": "#9a82fc",
+  "darkColor": null,
   "navigation": {
     "tabs": [
       {
@@ -84,5 +72,32 @@
         ]
       }
     ]
-  }
+  },
+  "keyFeatures": [
+    "Built-in Mihomo (Clash Meta) core with Alpha channel support",
+    "Cross-platform: Windows (x64/x86/ARM), macOS (Intel/Apple Silicon), Linux (x64/arm64)",
+    "Profile management with remote/local/merge/script types",
+    "Profile enhancement via Merge configs and JavaScript scripting",
+    "System proxy and TUN (virtual NIC) mode",
+    "Visual proxy group and rule editor",
+    "Real-time connections, logs, and traffic monitoring",
+    "WebDAV-based configuration backup and sync",
+    "Custom theming with CSS injection and color customization",
+    "Configurable hotkeys, i18n support (7+ languages)",
+    "Media unlock detection",
+    "Auto-update with multiple mirror endpoints"
+  ],
+  "publicApiSurface": [
+    "get_profiles / enhance_profiles / patch_profiles_item",
+    "patch_verge_config (IVerge settings)",
+    "enable_tun_mode / enable_system_proxy",
+    "import_profile (URL/local file)",
+    "get_proxies / select_proxy / test_delay",
+    "get_connections / delete_connection",
+    "get_logs",
+    "get_clash_info / patch_clash_config",
+    "backup_webdav / restore_webdav",
+    "check_media_unlock",
+    "Deep-link schemes: clash://, clash-verge://"
+  ]
 }

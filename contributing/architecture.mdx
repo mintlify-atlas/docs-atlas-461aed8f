@@ -1,0 +1,112 @@
+---
+title: "Clash Verge Rev Codebase Architecture"
+description: "Overview of how Clash Verge Rev is structured: the Rust Tauri backend, React frontend, config system, and how the Mihomo core is managed."
+---
+
+Clash Verge Rev is split into two main parts: a **Rust backend** (in `src-tauri/`) that manages the Mihomo proxy core, system integration, and persistent config, and a **TypeScript/React frontend** (in `src/`) that renders the UI. Tauri bridges them via typed commands. Understanding this separation is key to contributing effectively.
+
+## Repository layout
+
+```
+clash-verge-rev/
+├── src/                  # Frontend: TypeScript + React
+│   ├── pages/            # Route-level page components
+│   ├── components/       # Reusable UI components
+│   ├── hooks/            # Custom React hooks
+│   ├── services/         # Tauri command wrappers & state
+│   ├── types/            # Shared TypeScript type definitions
+│   └── locales/          # i18n translation files (13 languages)
+├── src-tauri/
+│   └── src/
+│       ├── cmd/          # Tauri command handlers (exposed to frontend)
+│       ├── config/       # Config structs: IVerge, IProfiles, PrfItem
+│       ├── core/         # CoreManager, service, hotkey, tray, updater
+│       ├── feat/         # High-level feature logic (proxy, profile, backup)
+│       ├── enhance/      # Profile enhancement pipeline (merge + script)
+│       ├── process/      # Async task processing
+│       └── utils/        # Helpers: dirs, logging, etc.
+├── crates/               # Workspace crates (logging, draft, etc.)
+└── template/             # Config file templates
+```
+
+## Frontend (`src/`)
+
+The frontend is a standard React 19 + Vite application using Material UI for components and React Router for navigation. Pages map directly to the sidebar tabs:
+
+| Page | File | Description |
+|---|---|---|
+| Home | `src/pages/home.tsx` | Traffic stats, proxy mode toggle, quick controls |
+| Proxies | `src/pages/proxies.tsx` | Proxy groups and node selection |
+| Profiles | `src/pages/profiles.tsx` | Profile management and enhancement |
+| Rules | `src/pages/rules.tsx` | Active rules viewer |
+| Connections | `src/pages/connections.tsx` | Live connection monitor |
+| Logs | `src/pages/logs.tsx` | Mihomo core log stream |
+| Settings | `src/pages/settings.tsx` | All app and core settings |
+
+Communication with the backend uses `@tauri-apps/api`'s `invoke()` function, wrapped in typed service functions under `src/services/`.
+
+## Backend (`src-tauri/src/`)
+
+### `cmd/` — Tauri commands
+
+Each file exposes `#[tauri::command]` functions that the frontend can call via `invoke()`. Commands are organized by domain:
+
+| File | Responsibility |
+|---|---|
+| `profile.rs` | Get/create/update/delete profiles, activate profiles |
+| `verge.rs` | Read and patch app settings (verge.yaml) |
+| `clash.rs` | Read/patch Mihomo core config |
+| `proxy.rs` | Get proxies, select proxy, test latency |
+| `backup.rs` | Create/restore/list backups |
+| `webdav.rs` | WebDAV backup upload/download |
+| `network.rs` | Network diagnostics |
+| `service.rs` | System service install/uninstall/start/stop |
+
+### `config/` — Config structs
+
+- **`IVerge`** (`verge.rs`) — App-level settings persisted to `verge.yaml`. Controls theme, proxy guard, TUN, hotkeys, ports, backup schedule, etc.
+- **`IProfiles`** (`profiles.rs`) — The list of all profiles and which is active.
+- **`PrfItem`** (`prfitem.rs`) — A single profile entry (type, URL, update interval, file content).
+- **`ClashConfig`** (`clash.rs`) — Mihomo core config overlay (ports, mode, log level, etc.).
+
+### `core/` — Runtime management
+
+- **`CoreManager`** (`manager/`) — Starts, stops, and restarts the Mihomo binary sidecar.
+- **`service.rs`** — The system helper service for privilege escalation (TUN mode).
+- **`hotkey.rs`** — Registers and handles global keyboard shortcuts.
+- **`tray/`** — System tray icon and menu management.
+- **`updater.rs`** — Auto-update logic using `tauri-plugin-updater`.
+- **`sysopt.rs`** — Sets and guards system proxy OS settings.
+
+### `enhance/` — Profile enhancement pipeline
+
+When a profile is activated, the enhancement pipeline runs:
+1. Load the base profile (remote/local YAML)
+2. Apply all **Merge** profiles in list order
+3. Apply all **Script** profiles in list order
+4. Write the resulting config to the runtime clash config file
+5. Signal Mihomo to reload
+
+## Data flow
+
+```
+User action (React UI)
+  → invoke("command_name", args)        # Tauri IPC
+  → cmd/*.rs handler
+  → feat/*.rs business logic
+  → config/*.rs state update
+  → Mihomo core API (via tauri-plugin-mihomo-api)
+  → UI refresh (React Query refetch)
+```
+
+## Key dependencies
+
+| Dependency | Purpose |
+|---|---|
+| `tauri` v2 | App framework, IPC, window management |
+| `tauri-plugin-mihomo-api` | HTTP client to the Mihomo REST API |
+| `serde` / `serde_yaml` | Config serialization |
+| `tokio` | Async runtime |
+| `react` 19 + `@mui/material` | UI framework |
+| `@tanstack/react-query` | Server state management |
+| `monaco-editor` | In-app YAML/JS editor |

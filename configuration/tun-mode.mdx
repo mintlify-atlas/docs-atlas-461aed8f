@@ -1,0 +1,131 @@
+---
+title: "TUN Mode: System-Wide Traffic Capture"
+description: "Enable TUN mode in Clash Verge Rev to capture all system traffic through a virtual NIC, with stack options, DNS hijacking, and platform privilege requirements."
+keywords: ["TUN mode", "clash verge rev", "virtual NIC", "gVisor", "system traffic", "mihomo tun", "traffic capture"]
+---
+
+TUN mode creates a virtual network interface that the operating system kernel routes all outbound traffic through. Unlike system proxy — which only captures apps that honour OS proxy settings — TUN intercepts traffic from every process on the machine, including games, CLI tools, system daemons, and apps that use raw sockets or have their own network stack. This page explains how TUN mode works, how to enable it, the available stack options, and DNS behaviour.
+
+## TUN mode vs system proxy
+
+<CardGroup cols={2}>
+  <Card title="System proxy" icon="arrow-right-arrow-left">
+    Sets OS-level HTTP/HTTPS/SOCKS proxy variables. Only apps that respect those settings are captured. No elevated privileges required. Does not intercept DNS.
+  </Card>
+  <Card title="TUN mode" icon="network-wired">
+    Creates a virtual NIC that captures all traffic at the kernel level. Covers every process. Requires admin or root privileges. Intercepts DNS queries when `dns-hijack` is configured.
+  </Card>
+</CardGroup>
+
+<Note>
+  You can run both system proxy and TUN mode at the same time. In practice, TUN mode alone is sufficient because it already captures all traffic that system proxy would.
+</Note>
+
+## Prerequisites
+
+TUN mode requires elevated privileges to create the virtual network interface. Clash Verge Rev ships with a built-in service helper that handles privilege escalation so you do not need to run the main application as root or administrator.
+
+<Tabs>
+  <Tab title="Windows">
+    The service helper (`clash-verge-service.exe`) is installed as a Windows Service the first time you enable TUN mode. Windows may show a UAC prompt during service installation. The WinTUN driver is bundled with the Mihomo core — no separate driver download is needed.
+  </Tab>
+  <Tab title="macOS">
+    Clash Verge Rev creates the TUN interface through a privileged helper tool. On first use, macOS will prompt you to allow the system extension under **System Settings > Privacy & Security**. The interface is named `utun1024` by default.
+  </Tab>
+  <Tab title="Linux">
+    The Mihomo binary needs the `cap_net_admin` capability to create TUN interfaces. Install the service helper (bundled with Clash Verge Rev) which manages this automatically, or grant the capability manually:
+
+    ```bash
+    sudo setcap cap_net_admin=ep /path/to/verge-mihomo
+    ```
+  </Tab>
+</Tabs>
+
+## Enable TUN mode
+
+<Steps>
+  <Step title="Open Settings">
+    Click the gear icon in the left sidebar.
+  </Step>
+  <Step title="Find the System section">
+    The **System** section is at the top of the Settings page.
+  </Step>
+  <Step title="Toggle TUN Mode on">
+    Click the **TUN Mode** toggle. If the service helper is not yet installed, Clash Verge Rev will prompt you to install it and may request elevated permissions.
+  </Step>
+  <Step title="Open TUN settings">
+    Click the settings icon next to the TUN Mode toggle to configure the virtual interface.
+  </Step>
+  <Step title="Save and apply">
+    Click **Save** in the TUN configuration dialog. Changes are applied to the running Mihomo core immediately.
+  </Step>
+</Steps>
+
+<Warning>
+  Enabling TUN mode captures **all** outbound traffic on the machine, including traffic from other users and system services. Confirm that your Mihomo profile's routing rules are correct before enabling TUN in a shared or production environment.
+</Warning>
+
+## Stack options
+
+The stack setting controls the TCP/IP implementation used inside the virtual interface.
+
+<AccordionGroup>
+  <Accordion title="System">
+    Delegates TCP/IP processing to the host OS kernel network stack. Lowest overhead, but can have compatibility issues on some platforms and kernel versions. Best suited for Linux where the host kernel is well-understood.
+  </Accordion>
+  <Accordion title="gVisor">
+    Uses Google's gVisor user-space network stack. Processes network traffic entirely in user space, which adds a small latency overhead compared to System but provides the best cross-platform compatibility. Recommended default for Windows and macOS.
+  </Accordion>
+  <Accordion title="Mixed">
+    Uses gVisor for UDP traffic and the system kernel stack for TCP. A middle ground between compatibility and performance. Useful when gVisor causes issues with specific apps but System stack causes UDP problems.
+  </Accordion>
+</AccordionGroup>
+
+## TUN configuration fields
+
+| Field | Default | Description |
+|---|---|---|
+| Stack | `gVisor` | TCP/IP stack implementation: `System`, `gVisor`, or `Mixed`. |
+| Device | `Mihomo` (Windows/Linux), `utun1024` (macOS) | Name of the virtual network interface. |
+| Auto Route | On | Automatically add routes to send all traffic into the TUN interface. |
+| Strict Route | Off | Enforce stricter routing to prevent route leaks. May break some LAN access patterns. |
+| Auto Detect Interface | On | Automatically detect the default outbound network interface. |
+| DNS Hijack | `any:53` | Intercept DNS queries and resolve them through Mihomo's DNS engine. |
+| MTU | `1500` | Maximum transmission unit for the virtual interface. |
+| Route Exclude Address | _(empty)_ | Comma-separated CIDR ranges that bypass the TUN interface. Requires Auto Route. |
+| Auto Redirect (Linux only) | Off | Configure `iptables` REDIRECT rules automatically. Requires Auto Route. |
+
+## DNS considerations
+
+TUN mode intercepts traffic at the network layer, including DNS queries. Without DNS hijacking, apps would send DNS requests that bypass the Clash rule engine — leaking hostnames and potentially resolving to unintended addresses.
+
+The default `dns-hijack: any:53` setting intercepts all UDP and TCP queries on port 53 regardless of the destination server, resolving them through Mihomo's DNS configuration in the active profile.
+
+<Tip>
+  If you experience DNS failures after enabling TUN mode, verify that your active profile's `dns` block has `enable: true` and at least one upstream nameserver configured. A missing or disabled DNS block in the profile causes all name resolution to fail under TUN.
+</Tip>
+
+## Route exclude address
+
+Use **Route Exclude Address** to exempt specific subnets from TUN capture — for example, a company VPN subnet or a local device subnet that must connect without going through Clash.
+
+```text
+192.168.100.0/24,10.8.0.0/16
+```
+
+Enter comma-separated CIDR blocks in the TUN settings dialog. Invalid CIDRs are highlighted, and the dialog will not save until they are corrected.
+
+<Note>
+  Route Exclude Address only works when Auto Route is enabled. With Auto Route off you must configure routing rules manually at the OS level.
+</Note>
+
+## `verge.yaml` reference
+
+<AccordionGroup>
+  <Accordion title="TUN mode fields">
+    | Field | Type | Default | Description |
+    |---|---|---|---|
+    | `enable_tun_mode` | `bool` | `false` | Enable or disable TUN mode. |
+    | `tun_tray_icon` | `bool` | `true` | Show TUN status indicator in the system tray. |
+  </Accordion>
+</AccordionGroup>

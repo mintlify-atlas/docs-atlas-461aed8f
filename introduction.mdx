@@ -1,0 +1,57 @@
+---
+title: 'Clash Verge Rev: Cross-Platform Proxy GUI Client'
+description: 'Discover Clash Verge Rev, a Tauri-based desktop GUI for the Mihomo (Clash Meta) proxy core, with system proxy, TUN mode, and profile management.'
+keywords: ['clash verge rev', 'mihomo', 'clash meta', 'proxy client', 'tauri', 'gui', 'cross-platform']
+---
+
+Clash Verge Rev is a cross-platform desktop GUI proxy client built on the [Tauri 2](https://tauri.app) framework, powered by the [Mihomo (Clash Meta)](https://github.com/MetaCubeX/mihomo) proxy core. It continues the original Clash Verge project with active maintenance, an updated tech stack, and expanded features — covering everything from basic system proxy setup to advanced profile scripting, TUN mode, and WebDAV-based configuration backup.
+
+## Key features
+
+- **Mihomo (Clash Meta) core** — Ships with the stable Mihomo binary; you can also switch to the Alpha channel core from within the app.
+- **System proxy and TUN mode** — Set a system-wide proxy with a single toggle, or use the virtual network adapter (TUN) mode to route all traffic transparently.
+- **Profile management and enhancement** — Import subscription URLs, merge multiple configs, and extend them with JavaScript scripts. Full syntax hints are included in the profile editor.
+- **Visual proxy and rule editing** — Browse proxy groups, test latency, and edit routing rules through a graphical interface without touching YAML by hand.
+- **WebDAV backup and sync** — Back up and restore your configuration to any WebDAV-compatible server.
+- **CSS injection and theming** — Customise the interface with arbitrary CSS, change theme colors, and swap proxy group or tray icons.
+- **Internationalization (i18n)** — UI available in multiple languages including English, Simplified Chinese, Spanish, Russian, Japanese, Korean, and Persian.
+- **Global hotkeys** — Bind keyboard shortcuts to common actions such as toggling the proxy or opening the dashboard.
+- **Built with Rust and Tauri 2** — Lightweight binary footprint with native performance on all supported platforms.
+
+## Supported platforms
+
+| Platform | Architectures |
+| -------- | ------------- |
+| Windows  | x64, x86, ARM (requires LLVM) |
+| macOS 11+ | Intel (x64), Apple Silicon (arm64) |
+| Linux    | x64, arm64 |
+
+Installer formats available: `.msi` / `.exe` (Windows), `.dmg` (macOS), `.deb` / `.rpm` / `.AppImage` (Linux).
+
+<Note>
+  Clash Verge Rev bundles the Mihomo (formerly Clash Meta) core. Any subscription URL or configuration file compatible with Clash Meta will work with this client.
+</Note>
+
+## Explore core features
+
+<CardGroup cols={2}>
+  <Card title="Proxies" icon="server" href="/features/proxies">
+    Browse proxy groups, switch nodes, and test latency.
+  </Card>
+  <Card title="Profiles" icon="file-lines" href="/features/profiles">
+    Import, manage, and enhance proxy subscription profiles.
+  </Card>
+  <Card title="Rules" icon="list-check" href="/features/rules">
+    View and edit traffic routing rules visually.
+  </Card>
+  <Card title="Connections" icon="network-wired" href="/features/connections">
+    Monitor active connections and their matched rules in real time.
+  </Card>
+  <Card title="Logs" icon="scroll" href="/features/logs">
+    Inspect proxy core logs for debugging and diagnostics.
+  </Card>
+</CardGroup>
+
+## License and source
+
+Clash Verge Rev is free and open-source software released under the [GPL-3.0 license](https://github.com/clash-verge-rev/clash-verge-rev/blob/main/LICENSE). Download releases and view the source code on the [GitHub releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases).

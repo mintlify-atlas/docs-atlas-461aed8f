@@ -1,0 +1,129 @@
+---
+title: 'Rules: View and Override Traffic Routing in Clash Verge'
+description: 'Understand how Clash routing rules work, browse active rules from your profile, use rule providers, and add per-profile overrides in Clash Verge Rev.'
+keywords: ['clash verge', 'rules', 'routing rules', 'rule types', 'DOMAIN', 'GEOIP', 'MATCH', 'rule providers', 'traffic routing']
+---
+
+Rules in Clash Verge Rev determine how each network connection is routed — whether it goes through a specific proxy group, connects directly, or is blocked. The Rules page displays every rule currently loaded from the active profile (after Merge and Script overlays are applied) and lets you search through them. Per-profile rule overrides can be edited directly from the profile context menu.
+
+## How rules work
+
+When a connection is established, Mihomo evaluates rules from top to bottom and applies the first rule that matches. The last rule in a well-formed profile is always a catch-all `MATCH` rule that routes any unmatched traffic to a fallback proxy group.
+
+Rule ordering is significant: a more specific rule placed below a broader one will never be reached. The Rules page shows rules with line numbers so you can reason about their priority.
+
+## Rule types
+
+The following rule types are supported by Mihomo:
+
+<AccordionGroup>
+  <Accordion title="DOMAIN">
+    Matches an exact domain name.
+
+    ```yaml
+    - DOMAIN,example.com,ProxyGroup
+    ```
+  </Accordion>
+  <Accordion title="DOMAIN-SUFFIX">
+    Matches a domain and all its subdomains.
+
+    ```yaml
+    - DOMAIN-SUFFIX,example.com,ProxyGroup
+    ```
+  </Accordion>
+  <Accordion title="DOMAIN-KEYWORD">
+    Matches any domain containing the specified keyword.
+
+    ```yaml
+    - DOMAIN-KEYWORD,google,ProxyGroup
+    ```
+  </Accordion>
+  <Accordion title="IP-CIDR / IP-CIDR6">
+    Matches traffic destined for an IP address within a CIDR range.
+
+    ```yaml
+    - IP-CIDR,192.168.0.0/16,DIRECT
+    - IP-CIDR6,::1/128,DIRECT
+    ```
+  </Accordion>
+  <Accordion title="GEOIP">
+    Matches traffic based on the destination IP's country code using the built-in GeoIP database.
+
+    ```yaml
+    - GEOIP,CN,DIRECT
+    ```
+  </Accordion>
+  <Accordion title="RULE-SET">
+    References a named rule provider (a remote or local file containing multiple rules). Allows rules to be managed separately from the main profile.
+
+    ```yaml
+    - RULE-SET,my-ruleset,ProxyGroup
+    ```
+  </Accordion>
+  <Accordion title="MATCH">
+    Matches all remaining connections. Must be the last rule in the list.
+
+    ```yaml
+    - MATCH,ProxyGroup
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Browsing rules
+
+The Rules page renders the complete ordered list of rules from the active runtime configuration, including rules injected by Merge overlays or rule providers. Each row shows:
+
+- **Line number** — the rule's position in the evaluated sequence.
+- **Type** — the rule type (e.g., `DOMAIN-SUFFIX`, `GEOIP`).
+- **Payload** — the value being matched (e.g., `google.com`, `CN`).
+- **Target** — the proxy group or policy (`DIRECT`, `REJECT`, or a named group).
+
+<Info>
+Rules are read-only on this page. The list reflects the live runtime state, not the raw profile YAML. To edit rules, use the per-profile rule editor described below.
+</Info>
+
+## Searching rules
+
+Use the search box below the page header to filter the rule list by payload. As you type, only rules whose payload matches the query are shown. The line numbers remain unchanged so you can see the original position of any matching rule.
+
+## Rule providers
+
+Click the **Providers** button in the page header to see all rule providers referenced by the active profile. For each provider you can see:
+
+- The provider name and rule count.
+- The update time.
+- A button to trigger an immediate refresh of that provider's rule set.
+
+<Tip>
+Rule providers are a good way to maintain large or frequently updated rule sets (such as blocklists or regional bypass lists) without embedding them directly in your profile YAML.
+</Tip>
+
+## Per-profile rule overrides
+
+Each profile has an associated rules override file. Editing it lets you add, modify, or prepend rules that are merged into the final configuration without touching the source profile — useful for remote subscriptions where you do not control the upstream YAML.
+
+<Steps>
+  <Step title="Open the profile context menu">
+    On the Profiles page, right-click the profile you want to edit and choose **Edit Rules**.
+  </Step>
+  <Step title="Add or edit rules in the editor">
+    The rules editor opens with the current override content. Add rules using standard Clash rule syntax. Rules entered here are prepended to the profile's existing rules, so they take higher priority.
+
+    ```yaml
+    rules:
+      - DOMAIN-SUFFIX,example.com,DIRECT
+      - IP-CIDR,10.0.0.0/8,DIRECT
+    ```
+  </Step>
+  <Step title="Save and re-activate">
+    Click **Save**. Then re-activate the profile (click it on the Profiles page, or use the **Re-activate** button) to apply the updated rules to the Mihomo core.
+  </Step>
+</Steps>
+
+<Warning>
+Rule overrides persist across remote profile updates. When you update a remote subscription, your local rule overrides are re-applied on top of the freshly downloaded profile.
+</Warning>
+
+## Scroll to top
+
+When the rule list is long, a **Scroll to Top** button appears in the lower-right corner after you scroll down. Click it to return to the first rule instantly.

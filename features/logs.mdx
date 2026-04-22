@@ -1,0 +1,105 @@
+---
+title: 'Logs: Real-Time Mihomo Core Output in Clash Verge Rev'
+description: 'Stream, filter, pause, and search real-time log output from the Mihomo core inside Clash Verge Rev, with configurable log levels and display order.'
+keywords: ['clash verge', 'logs', 'mihomo logs', 'log level', 'debug', 'info', 'warn', 'error', 'real-time logs']
+---
+
+The Logs page in Clash Verge Rev streams log messages directly from the running Mihomo (Clash Meta) core. Every routing decision, DNS lookup, connection event, and internal error appears here in real time, making it the first place to check when diagnosing unexpected proxy behavior or rule mismatches.
+
+## Log levels
+
+Mihomo emits log messages at different severity levels. The level set in **Settings → Clash Core → Log Level** controls the minimum severity that the core emits. Higher levels produce fewer messages.
+
+| Level | What is logged |
+|-------|----------------|
+| `silent` | Nothing. All logging is suppressed. |
+| `error` | Errors that prevent a connection from working. |
+| `warn` | Recoverable problems and configuration warnings. |
+| `info` | Connection events, rule matches, and general activity. |
+| `debug` | Detailed internal state useful for troubleshooting. |
+
+<Info>
+Setting the log level to `debug` significantly increases the volume of output. Use it only when actively troubleshooting; leave it at `info` or `warn` for everyday use.
+</Info>
+
+## Log entry format
+
+Each log entry contains:
+
+- **Timestamp** — the time the message was emitted by the core.
+- **Level** — the severity label (`info`, `warn`, `error`, `debug`).
+- **Message** — the log content, which typically includes the matched rule, proxy group, destination host, and connection outcome.
+
+Example log entry:
+
+```
+[info] [TCP] 192.168.1.5:53412 --> example.com:443 match DomainKeyword(google) using Proxy[HK-Node-01]
+```
+
+## Filtering by log level
+
+Use the level dropdown at the top-left of the log area to show only messages at or of a specific severity:
+
+- **All** — shows every message the core emits at the configured log level.
+- **debug** — shows only debug-level messages.
+- **info** — shows only info-level messages.
+- **warn** — shows only warning messages.
+- **error** — shows only error messages.
+
+<Tip>
+Filtering by level in the UI does not change what the core emits. If the core log level is set to `warn`, debug and info messages are never produced, so setting the UI filter to `debug` shows nothing new.
+</Tip>
+
+## Searching logs
+
+The search box filters the displayed log entries by keyword. The search matches against the full log text including the timestamp, level label, and message body. Results update immediately as you type.
+
+## Pausing and resuming the log stream
+
+Use the **Pause** / **Resume** toggle button in the page header to stop or restart the live log stream:
+
+- When **paused**, no new messages are appended to the list. Existing messages remain visible and searchable.
+- When **resumed**, the stream restarts and new messages begin appearing again.
+
+<Note>
+Pausing the log display does not pause the Mihomo core. The core continues operating and emitting logs internally; you simply stop receiving new entries in the UI until you resume.
+</Note>
+
+## Log display order
+
+Click the **Sort** button (swap arrows icon) in the page header to toggle between ascending and descending order:
+
+- **Ascending** (default) — oldest messages at the top, newest at the bottom. The view auto-scrolls to the latest entry.
+- **Descending** — newest messages at the top. Auto-scroll is disabled in this mode since the most recent entry is always visible.
+
+## Clearing logs
+
+Click the **Clear** button in the page header to remove all currently displayed log entries. The core continues running; only the in-memory display buffer is cleared. New messages will appear as they are emitted.
+
+## Log persistence
+
+By default, logs are held in memory only and are not written to disk. Restarting Clash Verge Rev clears all buffered log entries.
+
+To enable file logging, go to **Settings → Clash Core** and enable the **Log to file** option. When active, the core writes log output to a file in the application data directory. The exact path depends on your operating system:
+
+<Tabs>
+  <Tab title="Windows">
+    ```
+    %APPDATA%\io.github.clash-verge-rev.clash-verge-rev\logs\
+    ```
+  </Tab>
+  <Tab title="macOS">
+    ```
+    ~/Library/Application Support/io.github.clash-verge-rev.clash-verge-rev/logs/
+    ```
+  </Tab>
+  <Tab title="Linux">
+    ```
+    ~/.local/share/io.github.clash-verge-rev.clash-verge-rev/logs/
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+Log files can grow large quickly at `debug` level. If you enable file logging for troubleshooting, remember to disable it afterward or set an appropriate log level to limit file size.
+</Warning>

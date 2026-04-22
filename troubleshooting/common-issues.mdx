@@ -1,0 +1,222 @@
+---
+title: 'Common Issues Across All Platforms'
+description: 'Cross-platform troubleshooting for Clash Verge Rev — profile imports, rule matching, port conflicts, memory usage, auto-updates, and proxy connectivity.'
+keywords: ['clash verge rev', 'troubleshooting', 'common issues', 'profile import', 'rules', 'port conflict', 'auto-update', 'system proxy']
+---
+
+Some Clash Verge Rev problems appear on Windows, macOS, and Linux alike. These cross-platform issues are typically related to network configuration, profile setup, or application settings rather than anything specific to a particular operating system. The sections below cover the most frequently reported problems that apply regardless of your platform.
+
+<AccordionGroup>
+  <Accordion title="Profile fails to import from URL">
+    When you paste a subscription URL into the profile import dialog and the download fails, the most common causes are network accessibility and URL validity.
+
+    <Steps>
+      <Step title="Test the URL directly">
+        Open your browser or run the following command to verify the URL is reachable from your machine:
+
+        ```bash
+        curl -L -o /dev/null -w "%{http_code}" "https://your-subscription-url"
+        ```
+
+        A `200` response confirms the URL is accessible. Any other code indicates a network or server issue.
+      </Step>
+      <Step title="Import over a direct connection">
+        If Clash is already active and routing traffic, the subscription download may loop through itself. Disable the system proxy or TUN mode temporarily, then import the profile.
+      </Step>
+      <Step title="Check the User-Agent header">
+        Some subscription providers require a specific `User-Agent` header to serve valid configuration files. In the profile import settings, set a custom User-Agent such as `clash-verge/1.0` or one specified by your provider.
+      </Step>
+      <Step title="Use a local file as a fallback">
+        Download the profile file manually in your browser and import it using **Import from file** instead of a URL.
+      </Step>
+    </Steps>
+
+    <Note>
+      Subscription URLs are often time-limited or tied to an account. If the URL has expired, contact your provider to get a new one.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Proxies show no latency or all timeout">
+    The latency test in the **Proxies** panel sends a request to a configured test URL through each proxy. If all proxies show no result or time out, the profile or the test URL configuration is usually at fault.
+
+    <Steps>
+      <Step title="Verify the profile has valid proxy definitions">
+        Open the profile in the built-in editor and check that the `proxies` section is populated with at least one entry that has a valid server address and port.
+      </Step>
+      <Step title="Test a proxy manually">
+        Pick one proxy from the list and try connecting to it manually using a tool like `curl`:
+
+        ```bash
+        curl -x socks5://127.0.0.1:7891 https://www.gstatic.com/generate_204
+        ```
+
+        A successful connection returns an HTTP 204 with no body.
+      </Step>
+      <Step title="Change the latency test URL">
+        Go to **Settings > Clash** and update the **Test URL** to a reliable endpoint such as `http://www.gstatic.com/generate_204` or `http://cp.cloudflare.com/generate_204`. Some default URLs are region-blocked.
+      </Step>
+      <Step title="Check for expired credentials">
+        If your proxies require authentication (username/password or a token in the server address), verify the credentials have not expired with your service provider.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Rules not matching expected traffic">
+    Mihomo evaluates rules in top-to-bottom order and stops at the first match. If traffic is going to the wrong proxy or policy, a rule earlier in the list is likely matching it before the intended rule can.
+
+    <Steps>
+      <Step title="Check the proxy mode">
+        Open the main panel and confirm the mode is set to **Rule**. In **Global** mode, all traffic goes through a single proxy regardless of rules. In **Direct** mode, all traffic bypasses the proxy.
+      </Step>
+      <Step title="Inspect rule ordering">
+        Open your profile in the editor and review the `rules` section. Broad rules such as `GEOIP,CN,DIRECT` placed near the top will capture a wide range of traffic before more specific domain or IP rules below them.
+      </Step>
+      <Step title="Use the connections panel for diagnosis">
+        Open the **Connections** tab while reproducing the issue. Find the connection for the traffic you are investigating and note which rule matched it. The rule name is shown in the connection detail.
+      </Step>
+      <Step title="Add a more specific rule above the broad one">
+        Insert a more specific rule (for example, `DOMAIN-SUFFIX,example.com,Proxy`) before the broad rule that is incorrectly matching your traffic.
+      </Step>
+    </Steps>
+
+    <Tip>
+      The `MATCH` rule at the end of a rule list acts as the default catch-all. Any traffic not matched by a preceding rule falls through to `MATCH`. Make sure your catch-all policy is intentional.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Cannot connect after enabling system proxy">
+    Enabling the system proxy and immediately losing internet access is almost always caused by the bypass list not including local and LAN addresses.
+
+    <Steps>
+      <Step title="Check the bypass list">
+        In **Settings > System**, find the **Bypass List** or **No Proxy** field and ensure it contains at minimum:
+
+        ```
+        localhost
+        127.0.0.1
+        ::1
+        192.168.0.0/16
+        10.0.0.0/8
+        172.16.0.0/12
+        ```
+      </Step>
+      <Step title="Verify the proxy port is correct">
+        Confirm the proxy is listening on the expected port. In **Settings > Clash**, check the **HTTP Port** value (default `7890`). Run a quick check:
+
+        ```bash
+        curl -x http://127.0.0.1:7890 http://www.gstatic.com/generate_204
+        ```
+      </Step>
+      <Step title="Disable and re-enable the system proxy">
+        Toggle the system proxy off and back on in the main panel. This forces Clash Verge Rev to rewrite the proxy settings, which can recover from a stale configuration.
+      </Step>
+      <Step title="Restart the Mihomo core">
+        In **Settings > System**, click **Restart Core**. If the core process had an error during startup, restarting it often restores connectivity.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Auto-update fails">
+    The built-in updater checks GitHub releases for newer versions and downloads the package directly. Failures here are usually caused by GitHub connectivity issues or a corporate network that blocks GitHub's CDN.
+
+    <Steps>
+      <Step title="Check GitHub connectivity">
+        Visit `https://github.com/clash-verge-rev/clash-verge-rev/releases` in your browser or run:
+
+        ```bash
+        curl -I https://github.com/clash-verge-rev/clash-verge-rev/releases
+        ```
+
+        If this fails, the update server is unreachable from your current network.
+      </Step>
+      <Step title="Update manually">
+        Download the latest installer directly from the [releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) and run it over the existing installation.
+      </Step>
+      <Step title="Use a GitHub mirror (advanced)">
+        Some community-maintained GitHub mirrors can be used to download release assets if direct access is blocked. Check the project's community channels for currently active mirrors.
+      </Step>
+    </Steps>
+
+    <Warning>
+      Only download installers from the official GitHub releases page or a mirror you have independently verified. Do not install packages from unofficial third-party sites.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="App uses too much memory">
+    Memory usage in Clash Verge Rev grows over time when verbose logging is enabled or when a large number of connections accumulate in the connection log without being cleared.
+
+    <Steps>
+      <Step title="Reduce the log level">
+        Go to **Settings > Clash** and change **Log Level** to `Warning` or `Error`. The `Info` and `Debug` levels generate significantly more data, all of which is held in memory until rotated.
+      </Step>
+      <Step title="Enable auto log cleanup">
+        In **Settings > General**, enable **Auto Log Clean** and set an appropriate retention period. This prevents the log buffer from growing indefinitely.
+      </Step>
+      <Step title="Clear active connections">
+        Open the **Connections** tab and click **Close All** to terminate tracked connections that are no longer active. Old connection records are kept in memory until cleared.
+      </Step>
+      <Step title="Reduce rule set complexity">
+        Very large rule sets (tens of thousands of rules) require more memory to index. Remove unused rule providers or replace broad rule sets with more targeted ones.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Changes to profile don't take effect">
+    Editing a profile in the built-in editor does not automatically reload the running Mihomo configuration. You need to explicitly activate the profile after saving changes.
+
+    <Steps>
+      <Step title="Save your edits">
+        Finish editing the profile and save the file using the editor's save button or keyboard shortcut.
+      </Step>
+      <Step title="Activate the profile">
+        In the **Profiles** panel, click the **Activate** button (or the checkmark icon) next to the profile you edited. This triggers Mihomo to reload the configuration from disk.
+      </Step>
+      <Step title="Re-apply merge and script enhancements">
+        If you use a Merge or Script profile layered on top of the base profile, click the **Enhance** button (the chain-link or script icon) to re-run the merge/script pipeline and regenerate the final configuration.
+      </Step>
+    </Steps>
+
+    <Note>
+      Changes to **Settings** (ports, log level, TUN options) take effect immediately without requiring a profile reactivation. Only changes to profile YAML files require the explicit activate step.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Port conflicts">
+    Clash Verge Rev listens on several ports by default: `7890` (HTTP proxy), `7891` (SOCKS5 proxy), and `9090` (Mihomo controller API). If another process on your machine is already using one of these ports, the core will fail to start or behave unexpectedly.
+
+    <Steps>
+      <Step title="Identify the conflicting process">
+        <Tabs>
+          <Tab title="Windows">
+            ```powershell
+            netstat -ano | findstr ":7890 :7891 :9090"
+            ```
+
+            Note the PID in the last column and look it up in Task Manager.
+          </Tab>
+          <Tab title="macOS / Linux">
+            ```bash
+            lsof -i :7890 -i :7891 -i :9090
+            ```
+          </Tab>
+        </Tabs>
+      </Step>
+      <Step title="Change the conflicting port in Clash Verge Rev">
+        Go to **Settings > Clash** and update the port that conflicts:
+
+        - **HTTP Port** (default `7890`)
+        - **SOCKS Port** (default `7891`)
+        - **Controller Port** (default `9090`)
+
+        Choose unused high-numbered ports such as `17890`, `17891`, and `19090`.
+      </Step>
+      <Step title="Restart the core">
+        Click **Restart Core** in **Settings > System** to apply the new port bindings.
+      </Step>
+    </Steps>
+
+    <Tip>
+      If you change the controller port from `9090`, update any external tools (such as Metacubexd or other dashboard UIs) that connect to the Mihomo API to use the new port number.
+    </Tip>
+  </Accordion>
+</AccordionGroup>

@@ -1,97 +1,64 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Clash Verge Rev Documentation Home"
+description: "Welcome to the Clash Verge Rev docs. Find installation guides, proxy configuration, profile management, TUN mode setup, and troubleshooting for all platforms."
 ---
 
-## Setting up
+Clash Verge Rev is a continuation of the original Clash Verge project — a fast, lightweight desktop proxy client built with Tauri and React. It bundles the powerful Mihomo (Clash Meta) proxy core and wraps it in a polished, cross-platform interface that supports system proxy, TUN mode, profile management, rule editing, and much more.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Download and install Clash Verge Rev on Windows, macOS, or Linux
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Import your first proxy profile and start browsing in minutes
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Proxy Groups" icon="network-wired" href="/features/proxies">
+    Understand and manage proxy groups, nodes, and latency testing
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Profile Management" icon="file-lines" href="/features/profiles">
+    Add, update, and enhance subscription profiles with merge and scripting
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What you can do with Clash Verge Rev
 
-Everything you need to create world-class documentation.
+Clash Verge Rev brings together a powerful rule-based proxy engine with a clean desktop UI. Whether you need to route traffic through a corporate VPN, manage multiple proxy subscriptions, or set up system-wide transparent proxying via TUN mode, Clash Verge Rev has you covered.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="System Proxy" icon="globe" href="/configuration/system-proxy">
+    Configure system-wide HTTP/HTTPS/SOCKS proxy settings
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="TUN Mode" icon="ethernet" href="/configuration/tun-mode">
+    Route all device traffic through a virtual network interface
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="Profile Enhancement" icon="wand-magic-sparkles" href="/configuration/profile-enhancement">
+    Merge configs and run JavaScript scripts to customize profiles
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Theming & CSS Injection" icon="palette" href="/advanced/theming">
+    Customize colors, fonts, and inject custom CSS into the app
   </Card>
-</Columns>
+  <Card title="WebDAV Backup" icon="cloud" href="/advanced/webdav-backup">
+    Back up and sync your configuration across devices via WebDAV
+  </Card>
+  <Card title="Hotkeys" icon="keyboard" href="/advanced/hotkeys">
+    Set global keyboard shortcuts for quick proxy switching
+  </Card>
+</CardGroup>
 
-## Need inspiration?
+## Get started in three steps
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Steps>
+  <Step title="Download and install">
+    Visit the [Releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) and download the installer for your operating system. See [Installation](/installation) for platform-specific guidance.
+  </Step>
+  <Step title="Import a proxy profile">
+    Click the **Profiles** tab, then paste a subscription URL or import a local YAML config file. Clash Verge Rev will download and activate the profile automatically.
+  </Step>
+  <Step title="Enable system proxy or TUN mode">
+    Toggle **System Proxy** on the home screen to route browser traffic, or enable **TUN Mode** for system-wide transparent proxying. Your connection is now protected.
+  </Step>
+</Steps>
+
+<Note>
+  Clash Verge Rev uses the Mihomo (Clash Meta) core internally. Any Clash Meta-compatible subscription or configuration file works out of the box.
+</Note>

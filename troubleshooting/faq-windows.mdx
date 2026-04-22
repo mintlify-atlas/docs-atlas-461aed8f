@@ -1,0 +1,209 @@
+---
+title: 'Windows FAQ: Clash Verge Rev Common Issues'
+description: 'Solutions to the most common Clash Verge Rev problems on Windows, from startup failures and TUN mode errors to antivirus conflicts and UWP proxy issues.'
+keywords: ['clash verge rev', 'windows', 'faq', 'troubleshooting', 'TUN mode', 'WebView2', 'system proxy']
+---
+
+Clash Verge Rev runs on Windows via the Tauri 2 framework and the embedded Mihomo (Clash Meta) core. Most Windows-specific issues stem from missing runtime dependencies, permission restrictions, or conflicts with security software. The questions below cover the most frequently reported problems and their solutions.
+
+<AccordionGroup>
+  <Accordion title="App won't start or crashes on launch">
+    Clash Verge Rev requires the **Microsoft Edge WebView2 Runtime** to render its UI. If WebView2 is missing or corrupted, the app exits immediately or shows a blank window.
+
+    <Steps>
+      <Step title="Check if WebView2 is installed">
+        Open **Settings > Apps > Installed apps** and search for "WebView2". If it is not listed, continue to the next step.
+      </Step>
+      <Step title="Download and install WebView2">
+        Visit the [Microsoft WebView2 download page](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) and download the **Evergreen Bootstrapper**. Run the installer and restart your machine.
+      </Step>
+      <Step title="Relaunch Clash Verge Rev">
+        After installation completes, open Clash Verge Rev again. The app should load normally.
+      </Step>
+    </Steps>
+
+    <Note>
+      Windows 11 ships with WebView2 pre-installed. On Windows 10, it may be absent on older builds or after a clean install without Windows Update.
+    </Note>
+  </Accordion>
+
+  <Accordion title='"Access denied" errors'>
+    Certain operations — particularly installing the system service for TUN mode — require elevated privileges. Running the app as a standard user will produce "Access denied" errors for these actions.
+
+    <Steps>
+      <Step title="Run as administrator">
+        Right-click the Clash Verge Rev shortcut or executable and select **Run as administrator**.
+      </Step>
+      <Step title="Install the service">
+        Navigate to **Settings > System > TUN Mode** and click **Install Service**. This writes a system service that allows TUN to function without administrator rights on subsequent launches.
+      </Step>
+      <Step title="Relaunch normally">
+        Once the service is installed, you can open the app as a normal user. TUN mode will use the service for privileged network operations.
+      </Step>
+    </Steps>
+
+    <Warning>
+      Do not run the app as administrator permanently. Install the service once, then return to running it as a standard user to limit the attack surface.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Antivirus blocks the app">
+    Windows Defender and third-party antivirus tools sometimes flag Clash Verge Rev or its Mihomo core binary as a false positive due to their network interception behavior.
+
+    <Steps>
+      <Step title="Identify the blocked path">
+        Check your antivirus quarantine or event log to find the full path of the flagged file. It is typically inside `%APPDATA%\com.clash-verge-rev.app\` or the installation directory.
+      </Step>
+      <Step title="Add a Windows Defender exclusion">
+        Open **Windows Security > Virus & threat protection > Manage settings > Exclusions** and add the Clash Verge Rev installation folder and `%APPDATA%\com.clash-verge-rev.app\` as exclusions.
+      </Step>
+      <Step title="Restore quarantined files">
+        If any files were quarantined, restore them from the antivirus interface before relaunching the app.
+      </Step>
+    </Steps>
+
+    <Tip>
+      Report false positives to your antivirus vendor using their submission portal. Clash Verge Rev is open source under the GPL-3.0 license and its binaries are reproducible from the published source.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="System proxy not working">
+    If web traffic is not routed through the proxy despite the app showing it as active, the system proxy setting may not have been applied correctly or another process may be overriding it.
+
+    <Steps>
+      <Step title="Verify Windows proxy settings">
+        Open **Settings > Network & Internet > Proxy** and confirm that the manual proxy is set to `127.0.0.1` with the correct port (default `7890`).
+      </Step>
+      <Step title="Enable Proxy Guard">
+        In Clash Verge Rev, go to **Settings > System** and enable **Proxy Guard**. This periodically re-applies the system proxy setting, preventing other apps from silently disabling it.
+      </Step>
+      <Step title="Restart the app">
+        Disable the system proxy toggle, wait a few seconds, then re-enable it to force a fresh write to the Windows proxy registry keys.
+      </Step>
+    </Steps>
+
+    <Note>
+      Some VPN clients and network management software reset the system proxy on startup. Proxy Guard compensates for this by continuously monitoring and reapplying the setting.
+    </Note>
+  </Accordion>
+
+  <Accordion title="TUN mode not working">
+    TUN mode creates a virtual network adapter to capture all system traffic. It requires a privileged system service to be installed before it functions correctly.
+
+    <Steps>
+      <Step title="Open TUN settings">
+        Navigate to **Settings > System > TUN Mode**.
+      </Step>
+      <Step title="Install the service">
+        Click **Install Service**. A UAC prompt will appear — accept it to allow the service installation.
+      </Step>
+      <Step title="Enable TUN mode">
+        Toggle **TUN Mode** on. The virtual adapter should appear in **Device Manager > Network adapters** as a new entry.
+      </Step>
+      <Step title="Verify the adapter">
+        Open **Control Panel > Network and Sharing Center** and confirm the TUN adapter is listed and active.
+      </Step>
+    </Steps>
+
+    <Warning>
+      If the service fails to install, ensure you have administrator rights and that no other TUN/TAP driver (such as OpenVPN TAP) is conflicting. Check the app logs at **Settings > Logs** for specific error messages.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Slow startup">
+    Clash Verge Rev starts the Mihomo core process in the background when the app launches. Depending on your hardware and profile complexity, this can take several seconds before traffic routing is active.
+
+    - Wait for the **tray icon** to appear in the system notification area. The icon appearing indicates the core has finished initializing and is ready.
+    - If startup consistently takes more than 30 seconds, check whether your antivirus is scanning the Mihomo binary on every launch. Adding the binary to an exclusion list will reduce scan overhead.
+    - Large profiles with hundreds of rules take longer to parse. Consider splitting oversize profiles or removing unused rule sets.
+
+    <Tip>
+      Enable **Auto Launch** in **Settings > General** to start the app at login. Starting it before you need it avoids any perceived delay when you first open a browser.
+    </Tip>
+  </Accordion>
+
+  <Accordion title='App stuck on "loading"'>
+    The app UI communicates with the Mihomo core through a local HTTP API, by default on port `9090`. If a firewall rule or another process is blocking that port, the UI will spin indefinitely on the loading screen.
+
+    <Steps>
+      <Step title="Check for port conflicts">
+        Open a PowerShell window and run:
+
+        ```powershell
+        netstat -ano | findstr :9090
+        ```
+
+        If a process other than `clash-verge-rev.exe` or `mihomo.exe` is listed, that process is occupying the control port.
+      </Step>
+      <Step title="Change the control port">
+        Open **Settings > Clash** and update the **Controller Port** to an unused port such as `19090`. Restart the app.
+      </Step>
+      <Step title="Check Windows Firewall">
+        Open **Windows Defender Firewall > Allow an app through Firewall** and ensure Clash Verge Rev and its core process are permitted for private networks.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="UWP apps not going through proxy">
+    Universal Windows Platform (UWP) apps are sandboxed and by default cannot connect to loopback addresses, which means they bypass the local system proxy entirely.
+
+    <Steps>
+      <Step title="Enable UWP loopback exemption">
+        In Clash Verge Rev, go to **Settings > System** and enable **UWP Loopback**. This runs `CheckNetIsolation.exe` to exempt UWP apps from the loopback restriction.
+      </Step>
+      <Step title="Verify specific apps">
+        If a specific UWP app still bypasses the proxy, open a PowerShell window as administrator and run:
+
+        ```powershell
+        CheckNetIsolation LoopbackExempt -a -n="<PackageFamilyName>"
+        ```
+
+        Replace `<PackageFamilyName>` with the app's package family name, found in its Store URL or via `Get-AppxPackage` in PowerShell.
+      </Step>
+    </Steps>
+
+    <Note>
+      Alternatively, use TUN mode to capture all traffic at the network adapter level, which bypasses the UWP loopback restriction entirely.
+    </Note>
+  </Accordion>
+
+  <Accordion title="ARM device issues">
+    On Windows ARM devices (such as Surface Pro X or Snapdragon X Elite laptops), additional toolchain dependencies are required if you are building from source. Pre-built releases from the release page are compiled for ARM and do not require any extra setup.
+
+    <Tabs>
+      <Tab title="Using a pre-built release">
+        Download the `windows-arm64` installer from the [Release page](https://github.com/clash-verge-rev/clash-verge-rev/releases). No additional dependencies are needed for end users.
+      </Tab>
+      <Tab title="Building from source on ARM">
+        ARM builds require the LLVM toolchain in addition to the standard Rust and Tauri prerequisites:
+
+        <Steps>
+          <Step title="Install LLVM">
+            Download and install LLVM from [llvm.org](https://llvm.org/builds/) or via `winget`:
+
+            ```powershell
+            winget install LLVM.LLVM
+            ```
+          </Step>
+          <Step title="Install the MSVC toolchain">
+            Install Visual Studio Build Tools with the **Desktop development with C++** workload selected, which includes the MSVC compiler required for native dependencies.
+          </Step>
+          <Step title="Set environment variables">
+            Add LLVM's `bin` directory to your `PATH` and set:
+
+            ```powershell
+            $env:LIBCLANG_PATH = "C:\Program Files\LLVM\bin"
+            ```
+          </Step>
+          <Step title="Build the project">
+            ```shell
+            pnpm i
+            pnpm run prebuild
+            pnpm dev
+            ```
+          </Step>
+        </Steps>
+      </Tab>
+    </Tabs>
+  </Accordion>
+</AccordionGroup>

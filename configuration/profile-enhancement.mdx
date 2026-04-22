@@ -1,0 +1,174 @@
+---
+title: "Enhance Profiles with Merge and Script"
+description: "Use Merge YAML and Script JavaScript enhancements in Clash Verge Rev to modify subscription profiles without editing the original files."
+keywords: ["profile enhancement", "merge", "script", "clash verge rev", "mihomo", "subscription override", "Monaco editor"]
+---
+
+Profile enhancement lets you modify the active Clash configuration without touching the original subscription file. This means you can add rules, change proxy groups, or transform any part of the config — and those changes survive the next subscription update because they live in separate enhancement files rather than in the profile itself. Clash Verge Rev supports two enhancement types: **Merge** (YAML overlay) and **Script** (JavaScript transformation).
+
+## How enhancements work
+
+When a profile is activated, Clash Verge Rev builds the final configuration by applying enhancements in order on top of the base profile:
+
+<Steps>
+  <Step title="Base profile">
+    The raw profile file — typically a subscription URL download — is loaded as the starting configuration.
+  </Step>
+  <Step title="Merge enhancements">
+    Each enabled Merge enhancement is applied in list order. Fields present in the Merge YAML are merged into (or override) the corresponding fields in the base config.
+  </Step>
+  <Step title="Script enhancements">
+    Each enabled Script enhancement is applied in list order after all merges. The script receives the current config object and must return a modified config object.
+  </Step>
+</Steps>
+
+<Info>
+  Enhancements are applied every time you switch to a profile or reload it. The original subscription file is never modified.
+</Info>
+
+## Creating an enhancement
+
+<Steps>
+  <Step title="Open the Profiles page">
+    Click **Profiles** in the left sidebar.
+  </Step>
+  <Step title="Create a new enhancement profile">
+    Click **New Profile**. In the dialog, set the type to **Merge** or **Script**.
+  </Step>
+  <Step title="Open the editor">
+    Click the edit icon on the enhancement card to open the Monaco editor.
+  </Step>
+  <Step title="Write the enhancement content">
+    See the examples below for the correct format for each type.
+  </Step>
+  <Step title="Enable the enhancement">
+    Drag the enhancement card into the **Enhancement** list of the active profile, or use the context menu to enable it.
+  </Step>
+</Steps>
+
+## Merge type
+
+A Merge enhancement is a YAML file. Its top-level keys are merged into the base profile. If the same key exists in both the base profile and the Merge file, the Merge file wins (shallow merge by default for most keys; lists are replaced, not appended, unless you use the prepend/append syntax).
+
+### Prepend a rule
+
+```yaml
+rules:
+  - DOMAIN,example.com,DIRECT
+```
+
+This replaces the entire `rules` list with a single rule. To prepend your rule while keeping the original rules, use the special `prepend-rules` key:
+
+```yaml
+prepend-rules:
+  - DOMAIN,example.com,DIRECT
+```
+
+### Override DNS settings
+
+```yaml
+dns:
+  enable: true
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+  fallback:
+    - tls://8.8.4.4
+```
+
+### Add a proxy group
+
+```yaml
+proxy-groups:
+  - name: MyCustomGroup
+    type: select
+    proxies:
+      - DIRECT
+```
+
+<Tip>
+  Use `prepend-rules`, `append-rules`, `prepend-proxies`, and `append-proxies` keys to add items to the beginning or end of existing lists without replacing them.
+</Tip>
+
+## Script type
+
+A Script enhancement is a JavaScript file containing a `main` function. The function receives the current configuration object (already merged from all Merge enhancements) and must return a modified configuration object.
+
+### Prepend a rule
+
+```javascript
+function main(config) {
+  config.rules = ["DOMAIN,example.com,DIRECT", ...config.rules];
+  return config;
+}
+```
+
+### Filter out specific proxies
+
+```javascript
+function main(config) {
+  config.proxies = (config.proxies || []).filter(
+    (proxy) => proxy.name !== "Excluded Proxy"
+  );
+  return config;
+}
+```
+
+### Conditionally set a value
+
+```javascript
+function main(config) {
+  if (!config.dns || !config.dns.enable) {
+    config.dns = {
+      enable: true,
+      nameserver: ["1.1.1.1", "8.8.8.8"],
+    };
+  }
+  return config;
+}
+```
+
+<Warning>
+  The `main` function must always return the config object. If it returns `undefined` or throws an exception, Clash Verge Rev will log an error and skip that enhancement, which may leave the core in an inconsistent state.
+</Warning>
+
+## Monaco editor
+
+Both enhancement types open in the built-in Monaco editor with full syntax highlighting:
+
+- **Merge** files use YAML syntax highlighting.
+- **Script** files use JavaScript syntax highlighting with basic IntelliSense.
+
+<CardGroup cols={2}>
+  <Card title="YAML (Merge)" icon="file-code">
+    YAML syntax highlighting, bracket matching, and indentation guides. Errors in YAML structure are underlined inline.
+  </Card>
+  <Card title="JavaScript (Script)" icon="js">
+    JavaScript syntax highlighting with bracket matching and basic type inference. Console errors from the `main` function are shown in the Logs page.
+  </Card>
+</CardGroup>
+
+## Enhancement order and priority
+
+The order of enhancements within a profile determines the final result:
+
+1. Enhancements are applied top-to-bottom in the list shown on the Profiles page.
+2. Later enhancements override earlier ones for the same config key.
+3. All Merge enhancements run before all Script enhancements, regardless of their position in the list.
+
+<AccordionGroup>
+  <Accordion title="Example: multiple Merge enhancements">
+    If Enhancement A sets `dns.enable: false` and Enhancement B sets `dns.enable: true`, and B is listed after A, the final config will have `dns.enable: true`.
+  </Accordion>
+  <Accordion title="Example: Merge then Script">
+    A Merge enhancement adds a proxy group. A subsequent Script enhancement reads `config['proxy-groups']` and reorders the proxies. The script sees the already-merged list, so the order of merge-then-script always applies regardless of list position.
+  </Accordion>
+</AccordionGroup>
+
+## Built-in script support
+
+Clash Verge Rev includes a built-in JavaScript runtime for Script enhancements. The runtime is enabled by default (`enable_builtin_enhanced: true` in `verge.yaml`). If you disable it, Script enhancements are ignored silently.
+
+<Note>
+  Script enhancements run in a sandboxed environment inside the app. They do not have access to the filesystem, network, or any Node.js APIs. Only standard ECMAScript globals are available.
+</Note>

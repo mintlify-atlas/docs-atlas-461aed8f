@@ -1,0 +1,258 @@
+---
+title: 'Linux FAQ: Running Clash Verge Rev on Linux'
+description: 'Fix Clash Verge Rev issues on Linux: missing libraries, TUN permissions, tray icons, Wayland rendering problems, and system proxy DE limitations.'
+keywords: ['clash verge rev', 'linux', 'faq', 'troubleshooting', 'TUN mode', 'AppImage', 'wayland', 'tray icon', 'system proxy']
+---
+
+Clash Verge Rev on Linux is distributed as a `.deb` package, an `.rpm` package, and an AppImage. Because Linux distributions vary widely in their default library sets and desktop environments, some setup steps differ from Windows and macOS. The questions below address the most common issues encountered on Debian/Ubuntu, Fedora/Arch, and other distributions.
+
+<AccordionGroup>
+  <Accordion title="App fails to start — missing system libraries">
+    The Tauri 2 runtime depends on several system libraries that are not always installed by default, particularly on minimal or server-derived desktop installations.
+
+    <Tabs>
+      <Tab title="Debian / Ubuntu">
+        Install the required packages:
+
+        ```bash
+        sudo apt update
+        sudo apt install -y \
+          libxslt1.1 \
+          libwebkit2gtk-4.1-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev \
+          libssl-dev \
+          libgtk-3-dev
+        ```
+      </Tab>
+      <Tab title="Fedora / RHEL">
+        ```bash
+        sudo dnf install -y \
+          libxslt \
+          webkit2gtk4.1-devel \
+          libayatana-appindicator-devel \
+          librsvg2-devel \
+          openssl-devel \
+          gtk3-devel
+        ```
+      </Tab>
+      <Tab title="Arch Linux">
+        ```bash
+        sudo pacman -S --needed \
+          libxslt \
+          webkit2gtk-4.1 \
+          libayatana-appindicator \
+          librsvg \
+          openssl \
+          gtk3
+        ```
+      </Tab>
+    </Tabs>
+
+    After installing the libraries, relaunch the app. If it still fails, run it from a terminal to see the exact error:
+
+    ```bash
+    clash-verge-rev 2>&1 | head -50
+    ```
+
+    <Note>
+      The package name `libwebkit2gtk-4.1-dev` targets Tauri 2. Older systems may only offer `libwebkit2gtk-4.0-dev` (Tauri 1). If Tauri 2 packages are unavailable, use the AppImage release which bundles its own WebKit.
+    </Note>
+  </Accordion>
+
+  <Accordion title="System proxy only works in GNOME or KDE">
+    Clash Verge Rev writes the system proxy by calling into the GNOME `gsettings` schema or the KDE proxy configuration. Desktop environments that do not use either of these mechanisms — such as XFCE, LXDE, i3, or Sway — may not pick up the setting.
+
+    <Tabs>
+      <Tab title="Environment variables (universal)">
+        Set the following variables in your shell profile (e.g., `~/.bashrc`, `~/.zshrc`, or `~/.profile`) and re-login:
+
+        ```bash
+        export http_proxy="http://127.0.0.1:7890"
+        export https_proxy="http://127.0.0.1:7890"
+        export all_proxy="socks5://127.0.0.1:7891"
+        export no_proxy="localhost,127.0.0.1,::1"
+        ```
+      </Tab>
+      <Tab title="TUN mode (recommended)">
+        TUN mode captures all traffic at the network adapter level and does not rely on the desktop environment's proxy integration at all.
+
+        <Steps>
+          <Step title="Grant TUN permissions">
+            See the **TUN mode needs root or special capability** entry below for setup steps.
+          </Step>
+          <Step title="Enable TUN mode">
+            In **Settings > System > TUN Mode**, toggle TUN on. All traffic will route through Mihomo regardless of desktop environment.
+          </Step>
+        </Steps>
+      </Tab>
+    </Tabs>
+  </Accordion>
+
+  <Accordion title="TUN mode needs root or special capability">
+    Creating a TUN network adapter requires elevated privileges. There are two ways to grant these without running the entire app as root.
+
+    <Tabs>
+      <Tab title="Using pkexec (recommended)">
+        Clash Verge Rev installs a privileged helper via `pkexec`. Ensure `/usr/bin/pkexec` is present and that a Polkit agent is running in your session:
+
+        ```bash
+        which pkexec           # should return /usr/bin/pkexec
+        pgrep -a polkit        # should show a running polkit daemon
+        ```
+
+        Then, in **Settings > System > TUN Mode**, click **Install Service**. A Polkit authentication dialog will appear — enter your password to authorize.
+      </Tab>
+      <Tab title="Using CAP_NET_ADMIN">
+        If Polkit is unavailable, you can grant the Mihomo binary the `CAP_NET_ADMIN` capability directly:
+
+        ```bash
+        sudo setcap cap_net_admin=eip /path/to/mihomo
+        ```
+
+        Replace `/path/to/mihomo` with the actual path, typically inside `~/.config/clash-verge-rev/` or `/usr/lib/clash-verge-rev/`.
+
+        <Warning>
+          Granting `CAP_NET_ADMIN` to a binary allows it to manipulate network interfaces without a password prompt. Only do this for binaries you trust and from a verified source.
+        </Warning>
+      </Tab>
+      <Tab title="Running with sudo">
+        As a last resort, launch the app with `sudo`. This is not recommended for regular use:
+
+        ```bash
+        sudo clash-verge-rev
+        ```
+      </Tab>
+    </Tabs>
+  </Accordion>
+
+  <Accordion title="AppImage not executable">
+    Downloaded AppImage files do not have the executable bit set by default. Attempting to open them by double-clicking may fail silently or open a file manager instead.
+
+    <Steps>
+      <Step title="Make the file executable">
+        ```bash
+        chmod +x ClashVergeRev_*.AppImage
+        ```
+      </Step>
+      <Step title="Run the AppImage">
+        ```bash
+        ./ClashVergeRev_*.AppImage
+        ```
+
+        Or double-click it in a file manager after marking it executable.
+      </Step>
+      <Step title="Optional: integrate with the system">
+        To add a launcher entry, run the AppImage with the `--install` flag if supported, or manually create a `.desktop` file in `~/.local/share/applications/`.
+      </Step>
+    </Steps>
+
+    <Tip>
+      If your file manager does not offer an "Allow executing file as program" option, you can also right-click the file, open **Properties > Permissions**, and check the "Execute" checkbox.
+    </Tip>
+  </Accordion>
+
+  <Accordion title="Tray icon not showing">
+    The system tray icon requires `libayatana-appindicator` (or the older `libappindicator`) to be installed, and your desktop environment must have a status notifier area.
+
+    <Steps>
+      <Step title="Install the appindicator library">
+        <Tabs>
+          <Tab title="Debian / Ubuntu">
+            ```bash
+            sudo apt install -y libayatana-appindicator3-1
+            ```
+          </Tab>
+          <Tab title="Fedora">
+            ```bash
+            sudo dnf install -y libayatana-appindicator
+            ```
+          </Tab>
+          <Tab title="Arch">
+            ```bash
+            sudo pacman -S libayatana-appindicator
+            ```
+          </Tab>
+        </Tabs>
+      </Step>
+      <Step title="Install a tray support extension (GNOME)">
+        GNOME Shell does not show status icons by default. Install the **AppIndicator and KStatusNotifierItem Support** extension from [extensions.gnome.org](https://extensions.gnome.org/extension/615/appindicator-support/).
+      </Step>
+      <Step title="Relaunch the app">
+        After installing the library and any required extensions, close and reopen Clash Verge Rev.
+      </Step>
+    </Steps>
+
+    <Note>
+      On Sway and other wlroots-based compositors, tray support depends on the bar application. For example, `waybar` has built-in tray support; enable the `tray` module in its configuration.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Service installation fails">
+    Installing the TUN service requires the Clash Verge Rev binary and the Mihomo core binary to have execute permissions, and `pkexec` must be available for privilege escalation.
+
+    <Steps>
+      <Step title="Verify execute permissions">
+        ```bash
+        ls -la /usr/bin/clash-verge-rev
+        ls -la ~/.config/clash-verge-rev/clash-meta  # or wherever the core binary is
+        ```
+
+        Both files should show `-rwxr-xr-x` or similar. If not, run:
+
+        ```bash
+        chmod +x /usr/bin/clash-verge-rev
+        chmod +x ~/.config/clash-verge-rev/clash-meta
+        ```
+      </Step>
+      <Step title="Verify pkexec is available">
+        ```bash
+        which pkexec
+        pkexec --version
+        ```
+
+        If `pkexec` is missing, install `policykit-1` (Debian/Ubuntu) or `polkit` (Fedora/Arch).
+      </Step>
+      <Step title="Retry service installation">
+        In **Settings > System > TUN Mode**, click **Install Service** again and authenticate the Polkit dialog.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Blank window or crash on Wayland">
+    The WebKit2GTK renderer used by Tauri may have rendering issues on some Wayland compositors, particularly when DMA-BUF is not supported or when using certain GPU drivers.
+
+    <Steps>
+      <Step title="Set the WebKit DMA-BUF disable flag">
+        Before launching the app, set the following environment variable:
+
+        ```bash
+        WEBKIT_DISABLE_DMABUF_RENDERER=1 clash-verge-rev
+        ```
+      </Step>
+      <Step title="Persist the variable">
+        To apply this permanently, add it to your shell profile or create a wrapper script:
+
+        ```bash
+        # ~/.local/bin/clash-verge-rev-wayland
+        #!/usr/bin/env bash
+        export WEBKIT_DISABLE_DMABUF_RENDERER=1
+        exec /usr/bin/clash-verge-rev "$@"
+        ```
+
+        Then update your `.desktop` launcher to use this wrapper script.
+      </Step>
+      <Step title="Force X11 compatibility mode (fallback)">
+        If the DMA-BUF workaround is not sufficient, run the app under XWayland:
+
+        ```bash
+        GDK_BACKEND=x11 clash-verge-rev
+        ```
+      </Step>
+    </Steps>
+
+    <Tip>
+      The DMA-BUF renderer issue is most common on NVIDIA proprietary drivers and on Intel graphics with older Mesa versions. Updating Mesa or switching to the open-source nouveau driver often resolves it.
+    </Tip>
+  </Accordion>
+</AccordionGroup>

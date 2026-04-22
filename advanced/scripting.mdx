@@ -1,0 +1,184 @@
+---
+title: 'Script Profiles: JavaScript Config Automation'
+description: 'Use JavaScript to programmatically transform your Clash configuration — filter proxies, rewrite rules, and inject custom DNS settings on every profile load.'
+keywords: ['clash verge rev', 'script profile', 'javascript', 'config automation', 'proxy filter', 'mihomo', 'clash meta']
+---
+
+Script profiles let you write JavaScript that runs against your merged Clash configuration every time a profile is activated or updated. Instead of manually editing YAML, you can filter proxies by name, rewrite rule targets, inject DNS settings, reorganize proxy groups, and more — all in code.
+
+## How it works
+
+When you activate a script profile, Clash Verge Rev passes the fully merged configuration object to your script as a variable called `config`. Your script must return the modified (or unmodified) config object. The returned value replaces the config that gets sent to the Mihomo core.
+
+```
+profile activated → config merged → script(config) → modified config → Mihomo
+```
+
+The script runs again each time the profile is refreshed or the subscription is updated.
+
+## Runtime environment
+
+<Warning>
+The script runtime is a built-in JavaScript engine bundled with Clash Verge Rev. It is **not** Node.js. There is no `require`, no `import`, no `process`, and no access to the filesystem or network from within the script.
+</Warning>
+
+The available globals are:
+
+| Global | Type | Description |
+|--------|------|-------------|
+| `config` | `object` | The merged Clash configuration (read and write) |
+| `config.proxies` | `array` | All proxy definitions |
+| `config.rules` | `array` | Traffic routing rules |
+| `config["proxy-groups"]` | `array` | Proxy group definitions |
+| `config.dns` | `object` | DNS configuration block |
+| `config["tun"]` | `object` | TUN mode configuration |
+
+Your script must end with a `return config;` statement (or equivalent expression that evaluates to the config object).
+
+## Creating a script profile
+
+<Steps>
+  <Step title="Open Profiles">
+    Navigate to the **Profiles** page in Clash Verge Rev.
+  </Step>
+  <Step title="Create a new profile">
+    Click **New Profile** and select **Script** as the profile type.
+  </Step>
+  <Step title="Write your script">
+    Enter your JavaScript in the script editor. The editor provides a starter template with the `config` variable already available.
+  </Step>
+  <Step title="Activate the profile">
+    Save and activate the script profile. It runs immediately and the modified config is applied to Mihomo.
+  </Step>
+</Steps>
+
+## Examples
+
+### Filter proxies by name pattern
+
+Remove proxies whose names contain certain keywords (for example, trial nodes or overloaded servers):
+
+```javascript
+// Remove proxies with "expire" or "剩余" in the name
+config.proxies = config.proxies.filter(proxy => {
+  const name = proxy.name || "";
+  return !name.includes("expire") && !name.includes("剩余");
+});
+
+// Also remove those proxies from all proxy groups
+config["proxy-groups"] = config["proxy-groups"].map(group => {
+  if (Array.isArray(group.proxies)) {
+    group.proxies = group.proxies.filter(name => {
+      return !name.includes("expire") && !name.includes("剩余");
+    });
+  }
+  return group;
+});
+
+return config;
+```
+
+### Inject custom DNS settings
+
+Override the DNS configuration regardless of what the subscription profile specifies:
+
+```javascript
+config.dns = {
+  enable: true,
+  "use-system-hosts": false,
+  nameserver: [
+    "https://1.1.1.1/dns-query",
+    "https://8.8.8.8/dns-query"
+  ],
+  fallback: [
+    "https://1.0.0.1/dns-query"
+  ],
+  "enhanced-mode": "fake-ip",
+  "fake-ip-range": "198.18.0.1/16"
+};
+
+return config;
+```
+
+### Prepend custom rules
+
+Add rules that take priority over the subscription's rule list:
+
+```javascript
+const customRules = [
+  "DOMAIN-SUFFIX,example.com,DIRECT",
+  "DOMAIN-SUFFIX,internal.corp,DIRECT",
+  "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve"
+];
+
+config.rules = [...customRules, ...config.rules];
+
+return config;
+```
+
+### Full example: filter slow nodes and add rules
+
+```javascript
+// 1. Remove proxies whose name starts with "SLOW" or "TEST"
+const blocklist = /^(SLOW|TEST)/i;
+
+config.proxies = config.proxies.filter(p => !blocklist.test(p.name));
+
+// 2. Sync proxy group members
+config["proxy-groups"] = config["proxy-groups"].map(group => {
+  if (Array.isArray(group.proxies)) {
+    group.proxies = group.proxies.filter(name => !blocklist.test(name));
+  }
+  return group;
+});
+
+// 3. Prepend high-priority rules
+const myRules = [
+  "DOMAIN-SUFFIX,mycompany.internal,DIRECT",
+  "GEOIP,CN,DIRECT"
+];
+config.rules = [...myRules, ...config.rules];
+
+// 4. Force a specific DNS nameserver
+config.dns = config.dns || {};
+config.dns.nameserver = ["https://1.1.1.1/dns-query"];
+
+return config;
+```
+
+## Error handling
+
+<Warning>
+If your script throws a JavaScript error or does not return a valid config object, the profile activation fails entirely. The previous active configuration remains in effect. Check **Settings > Logs** or the app log file to see the JavaScript error message.
+</Warning>
+
+Common causes of script errors:
+
+<AccordionGroup>
+  <Accordion title="Accessing a property that doesn't exist">
+    Some subscription profiles omit certain top-level keys. Always guard with `config.dns = config.dns || {};` before writing to nested properties.
+  </Accordion>
+  <Accordion title="Returning nothing or returning undefined">
+    Make sure your script ends with `return config;`. A script that falls off the end without a return value will fail.
+  </Accordion>
+  <Accordion title="Using Node.js APIs">
+    `require`, `import`, `fs`, `process`, and other Node.js globals are not available. The runtime only provides basic ECMAScript built-ins.
+  </Accordion>
+  <Accordion title="Mutating config.rules incorrectly">
+    Rules must be strings in Clash rule format (e.g. `"DOMAIN-SUFFIX,example.com,DIRECT"`). Pushing objects or malformed strings will cause Mihomo to reject the config.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+Test your script against a local profile before applying it to a remote subscription. Create a duplicate of the subscription profile as a local file, assign the script to it, and verify the output before switching your primary profile.
+</Tip>
+
+## Script execution timing
+
+The script runs:
+
+- When you manually activate the script profile
+- When the associated subscription profile is updated (on refresh or automatic update)
+- When you click **Reactivate** from the Profiles page
+
+It does not run continuously in the background — only on profile activation events.

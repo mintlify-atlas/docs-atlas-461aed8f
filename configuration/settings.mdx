@@ -1,0 +1,193 @@
+---
+title: "Settings Reference: All Clash Verge Rev Options"
+description: "Complete reference for every setting in Clash Verge Rev, covering System, Clash core, Verge interface, and Backup sections with their verge.yaml field names."
+keywords: ["settings reference", "clash verge rev", "verge.yaml", "configuration options", "mihomo", "system proxy", "TUN mode"]
+---
+
+The Settings page in Clash Verge Rev is divided into four sections. **System** and **Clash** settings are applied to the running Mihomo core immediately. **Verge** settings control the application's own behaviour and appearance. **Backup** settings manage configuration export and sync. All settings are persisted to `verge.yaml` in the app data directory.
+
+<Note>
+  Changes to Clash-section settings (port, log level, allow-LAN) are written directly to the running Mihomo core via the external controller API. They take effect without restarting the app but are overwritten if you reload the active profile.
+</Note>
+
+## System section
+
+Controls how the app interacts with the operating system at startup and for proxy modes.
+
+<AccordionGroup>
+  <Accordion title="TUN Mode">
+    Creates a virtual network interface that captures all system traffic, not just browser traffic. Requires a privileged service helper. See [TUN Mode](/configuration/tun-mode) for full configuration options.
+
+    `verge.yaml` field: `enable_tun_mode`
+  </Accordion>
+  <Accordion title="System Proxy">
+    Registers the Mihomo mixed port as the OS-level HTTP/HTTPS/SOCKS proxy. Includes sub-settings for Proxy Guard, bypass list, and PAC mode. See [System Proxy](/configuration/system-proxy) for full configuration options.
+
+    `verge.yaml` field: `enable_system_proxy`
+  </Accordion>
+  <Accordion title="Auto Launch">
+    Start Clash Verge Rev automatically when the user logs in. On Windows this adds a registry entry. On macOS it adds a Login Item. On Linux it creates a `.desktop` autostart entry.
+
+    `verge.yaml` field: `enable_auto_launch`
+  </Accordion>
+  <Accordion title="Silent Start">
+    When enabled alongside Auto Launch, the main window does not appear on startup. The app runs in the system tray only. Useful on shared or always-on machines.
+
+    `verge.yaml` field: `enable_silent_start`
+  </Accordion>
+</AccordionGroup>
+
+## Clash section
+
+Controls parameters passed directly to the Mihomo core. These settings are applied via the external controller API and reflected in `verge.yaml` or the running core state.
+
+<CardGroup cols={2}>
+  <Card title="Allow LAN" icon="wifi">
+    Let devices on the local network use the proxy. Exposes the mixed port on the machine's LAN IP address. Pairs with **Network Interface** to bind to a specific adapter.
+
+    `allow-lan` in Clash config.
+  </Card>
+  <Card title="IPv6" icon="globe">
+    Enable IPv6 processing in the Mihomo core. When off, IPv6 connections are not handled by the proxy.
+
+    `ipv6` in Clash config.
+  </Card>
+  <Card title="DNS Overwrite" icon="server">
+    Apply a separate `dns_config.yaml` file on top of the active profile's DNS settings. The gear icon opens the DNS configuration dialog.
+
+    `verge.yaml` field: `enable_dns_settings`
+  </Card>
+  <Card title="Unified Delay" icon="clock">
+    Display latency as the round-trip time to the proxy endpoint minus the time to the test URL directly, giving a more accurate picture of proxy-added latency.
+
+    `unified-delay` in Clash config.
+  </Card>
+</CardGroup>
+
+### Log level
+
+Controls the verbosity of the Mihomo core log. Logs are visible on the **Logs** page.
+
+| Value | Description |
+|---|---|
+| `debug` | All messages including internal state transitions. |
+| `info` | General operational messages. Default. |
+| `warning` | Conditions that may indicate a problem. |
+| `error` | Errors only. |
+| `silent` | No log output. |
+
+`verge.yaml` field: stored as `log-level` in the Clash runtime config.
+
+### Port configuration
+
+Click the port number field to open the **Port Configuration** dialog, which exposes the following ports:
+
+| Port | `verge.yaml` field | Default | Description |
+|---|---|---|---|
+| Mixed port | `verge_mixed_port` | `7897` | Handles HTTP, HTTPS, and SOCKS5 on a single port. |
+| HTTP port | `verge_port` | `7890` | HTTP-only proxy port. |
+| SOCKS port | `verge_socks_port` | `7891` | SOCKS5-only proxy port. |
+| Redirect port (non-Windows) | `verge_redir_port` | `7892` | TCP redirect port for transparent proxy. |
+| TProxy port (Linux only) | `verge_tproxy_port` | `7893` | Linux TProxy for UDP transparent proxy. |
+
+### External controller
+
+The external controller exposes Mihomo's REST API and WebSocket log/traffic streams. Click the external controller field to open the **Controller** dialog.
+
+| Field | Default | Description |
+|---|---|---|
+| Host | `127.0.0.1` | Address the controller binds to. |
+| Port | `9097` | Port for the REST API. |
+| Secret | _(empty)_ | Bearer token required for API requests. Leave empty to disable authentication (only safe on loopback). |
+
+`verge.yaml` field: `enable_external_controller`
+
+### Clash core
+
+Shows the currently running core version. Click the gear icon to open the **Clash Core** dialog and switch between:
+
+- **verge-mihomo** — stable release of Mihomo (Clash Meta).
+- **verge-mihomo-alpha** — alpha/nightly builds with the latest features, potentially less stable.
+
+`verge.yaml` field: `clash_core`
+
+### Web UI
+
+Configure one or more external web dashboards (such as Yacd or Metacubexd) that connect to the external controller. Click **Web UI** to manage the list.
+
+`verge.yaml` field: `web_ui_list`
+
+## Verge section
+
+Controls the application's appearance, behaviour, and interface preferences.
+
+<Tabs>
+  <Tab title="Basic">
+    | Setting | `verge.yaml` field | Options / Default | Description |
+    |---|---|---|---|
+    | Language | `language` | `en`, `zh`, `ru`, `fa`, `tt`, `id`, `ar`, `ko`, `tr`, `de`, `es`, `jp`, `zhtw` | UI display language. Default: `en`. |
+    | Theme mode | `theme_mode` | `light`, `dark`, `system` | App colour scheme. `system` follows OS preference. |
+    | Tray click event | `tray_event` | `main_window`, `tray_menu`, `system_proxy`, `tun_mode`, `disable` | Action when clicking the tray icon. Not available on Linux. |
+    | Copy env type | `env_type` | `bash`, `fish`, `nushell`, `cmd`, `powershell` | Shell format for **Copy Environment Variables**. |
+    | Start page | `start_page` | Route path | Which page opens when the app launches. |
+    | Startup script | `startup_script` | File path | Shell script (`.sh`, `.bat`, `.ps1`) executed at startup before the core loads. |
+  </Tab>
+  <Tab title="Interface">
+    | Setting | `verge.yaml` field | Default | Description |
+    |---|---|---|---|
+    | Traffic graph | `traffic_graph` | `true` | Show realtime upload/download speed graph in the sidebar. |
+    | Memory display | `enable_memory_usage` | `false` | Show Mihomo core memory usage. Requires Mihomo Meta core. |
+    | Proxy layout columns | `proxy_layout_column` | `2` | Number of columns in the proxy list on the Proxies page. |
+    | Collapse navbar | `collapse_navbar` | `false` | Collapse the left navigation bar to icon-only mode. |
+    | Pause traffic on blur | `pause_render_traffic_stats_on_blur` | `false` | Stop updating traffic stats when the window loses focus. Reduces CPU usage. |
+    | Notice position | `notice_position` | system default | Screen corner for toast notifications. |
+  </Tab>
+  <Tab title="Advanced">
+    | Setting | `verge.yaml` field | Default | Description |
+    |---|---|---|---|
+    | Auto-check update | `auto_check_update` | `true` | Periodically check for new Clash Verge Rev releases. |
+    | Auto-close connections | `auto_close_connection` | `true` | Close existing connections when switching proxy nodes. |
+    | Global hotkey | `enable_global_hotkey` | `false` | Enable system-wide keyboard shortcuts. Configure in **Hotkey Settings**. |
+    | Default latency test URL | `default_latency_test` | `https://www.gstatic.com/generate_204` | URL used for proxy latency testing. |
+    | Default latency timeout | `default_latency_timeout` | `5000` ms | Timeout in milliseconds for latency tests. |
+    | Auto delay detection | `enable_auto_delay_detection` | `false` | Automatically test current node latency at an interval. |
+    | Auto delay interval | `auto_delay_detection_interval_minutes` | `10` | Interval in minutes for automatic latency tests. |
+    | Log level (app) | `app_log_level` | `info` | Log verbosity for the Clash Verge Rev app itself (separate from Mihomo core logs). |
+    | Log max size | `app_log_max_size` | `10240` KB | Maximum size of a single app log file before rotation. |
+    | Auto log clean | `auto_log_clean` | `0` | Automatically delete logs older than: `0` = never, `1` = 1 day, `2` = 7 days, `3` = 30 days, `4` = 90 days. |
+    | Light weight mode | `enable_auto_light_weight_mode` | `false` | Automatically enter a reduced-resource mode after a period of inactivity. |
+    | Light weight delay | `auto_light_weight_minutes` | `5` | Minutes of inactivity before light weight mode activates. |
+  </Tab>
+</Tabs>
+
+## Backup section
+
+Clash Verge Rev can back up your configuration — including `verge.yaml`, profiles, and enhancement files — to a WebDAV server.
+
+<Steps>
+  <Step title="Open Backup settings">
+    Scroll to the **Backup** section at the bottom of the Settings page and click **Backup Settings**.
+  </Step>
+  <Step title="Configure WebDAV">
+    Enter the WebDAV server URL, username, and password. Credentials are stored encrypted in `verge.yaml`.
+
+    | Field | `verge.yaml` field | Description |
+    |---|---|---|
+    | WebDAV URL | `webdav_url` | Full URL of the WebDAV endpoint, e.g. `https://dav.example.com/clash/`. |
+    | Username | `webdav_username` | WebDAV account username. |
+    | Password | `webdav_password` | WebDAV account password. |
+  </Step>
+  <Step title="Enable automatic backups">
+    Toggle **Auto Backup Schedule** and set the interval.
+
+    | Field | `verge.yaml` field | Default | Description |
+    |---|---|---|---|
+    | Enable auto backup | `enable_auto_backup_schedule` | `false` | Run backups on a schedule. |
+    | Backup interval | `auto_backup_interval_hours` | `24` | Hours between automatic backups. |
+    | Backup on change | `auto_backup_on_change` | `false` | Create a backup immediately when a critical config file changes. |
+  </Step>
+</Steps>
+
+<Warning>
+  WebDAV credentials are encrypted at rest in `verge.yaml`, but the encryption key is derived from device-specific data. Do not share your `verge.yaml` file with others if it contains WebDAV credentials.
+</Warning>

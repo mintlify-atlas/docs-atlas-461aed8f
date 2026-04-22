@@ -1,0 +1,151 @@
+---
+title: "Set Up a Clash Verge Rev Dev Environment"
+description: "Step-by-step guide to cloning, building, and running Clash Verge Rev locally on Windows, macOS, or Linux for development and contributions."
+---
+
+Clash Verge Rev is a Tauri v2 application combining a Rust backend with a TypeScript/React frontend. Setting up a local development environment requires both Rust and Node.js toolchains, plus platform-specific dependencies. This page walks you through every step to get `pnpm dev` running.
+
+## Prerequisites
+
+Before you start, install the following:
+
+- **Rust** — install via [rustup](https://rustup.rs/)
+- **Node.js** — LTS version recommended
+- **pnpm** — enabled via Node.js Corepack (see below)
+- **Tauri v2 prerequisites** — platform libraries listed at [tauri.app/start/prerequisites](https://tauri.app/start/prerequisites/)
+
+<Steps>
+  <Step title="Enable pnpm via Corepack">
+    ```bash
+    corepack enable
+    ```
+  </Step>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/clash-verge-rev/clash-verge-rev.git
+    cd clash-verge-rev
+    ```
+  </Step>
+  <Step title="Install Node.js dependencies">
+    ```bash
+    pnpm install
+    ```
+  </Step>
+  <Step title="Download the Mihomo core binary">
+    This script fetches the correct Mihomo (Clash Meta) binary for your platform:
+    ```bash
+    pnpm run prebuild
+    ```
+    To force re-download (overwrite existing binaries):
+    ```bash
+    pnpm run prebuild --force
+    ```
+  </Step>
+  <Step title="Start the development server">
+    ```bash
+    pnpm dev
+    ```
+    Use `pnpm dev:diff` if an app instance is already running. Use `pnpm dev:tauri` to run in standard Tauri dev mode.
+  </Step>
+</Steps>
+
+## Platform-specific setup
+
+<Tabs>
+  <Tab title="Windows">
+    <Note>
+      Windows ARM users must also install [LLVM](https://github.com/llvm/llvm-project/releases) (including `clang`) and set the corresponding environment variables. The `ring` crate depends on `clang` when building on Windows ARM.
+    </Note>
+
+    Additional requirements for Windows:
+
+    - Ensure Rust and Node.js are in your system `PATH`
+    - Install the GNU `patch` tool
+    - Use the MSVC toolchain for Rust:
+
+    ```bash
+    rustup target add x86_64-pc-windows-msvc
+    rustup set default-host x86_64-pc-windows-msvc
+    ```
+
+    To build a portable (no-installer) Windows release:
+    ```bash
+    pnpm portable
+    ```
+  </Tab>
+  <Tab title="macOS">
+    Install Xcode Command Line Tools if not already present:
+    ```bash
+    xcode-select --install
+    ```
+    No additional system packages are required beyond the standard Tauri prerequisites.
+  </Tab>
+  <Tab title="Linux (Ubuntu/Debian)">
+    Install required system packages:
+    ```bash
+    sudo apt-get install -y \
+      libxslt1.1 \
+      libwebkit2gtk-4.1-dev \
+      libayatana-appindicator3-dev \
+      librsvg2-dev \
+      patchelf
+    ```
+  </Tab>
+</Tabs>
+
+## Building for release
+
+```bash
+pnpm build
+```
+
+For a faster build during testing:
+```bash
+pnpm build:fast
+```
+
+## Code quality checks
+
+Before committing, run these checks:
+
+<CodeGroup>
+```bash Frontend
+# Lint
+pnpm lint
+
+# Format
+pnpm format
+
+# Type check
+pnpm typecheck
+```
+```bash Rust backend
+# Lint
+cargo clippy-all
+
+# Format
+cargo fmt
+```
+</CodeGroup>
+
+## Submitting changes
+
+<Steps>
+  <Step title="Fork the repository">
+    Fork [clash-verge-rev/clash-verge-rev](https://github.com/clash-verge-rev/clash-verge-rev) on GitHub.
+  </Step>
+  <Step title="Create a feature branch">
+    ```bash
+    git checkout -b my-feature
+    ```
+  </Step>
+  <Step title="Commit with a signed commit">
+    Signed commits are required. See [GitHub docs on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits).
+    ```bash
+    git commit -S -m "feat: describe your change"
+    ```
+  </Step>
+  <Step title="Open a pull request">
+    Push your branch and open a PR against the `main` branch.
+  </Step>
+</Steps>

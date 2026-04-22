@@ -1,0 +1,136 @@
+---
+title: 'Install Clash Verge Rev on Windows, macOS, and Linux'
+description: 'Step-by-step instructions to download and install Clash Verge Rev on your operating system, including package formats and system requirements.'
+keywords: ['clash verge rev install', 'download', 'windows', 'macos', 'linux', 'deb', 'rpm', 'appimage', 'dmg', 'msi']
+---
+
+Clash Verge Rev provides pre-built installers for Windows, macOS, and Linux. This page explains which package to download for your platform and how to complete the installation. All releases are published on the [GitHub releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases).
+
+## Choose a release channel
+
+| Channel | Description | Best for |
+| ------- | ----------- | -------- |
+| **Stable** | Versioned, tested releases | Daily use (recommended) |
+| **AutoBuild** | Rolling builds from the latest commits | Testing new features; may contain bugs |
+
+Download stable releases from the main [releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases). AutoBuild artifacts are published under the [`autobuild` tag](https://github.com/clash-verge-rev/clash-verge-rev/releases/tag/autobuild).
+
+<Warning>
+  AutoBuild releases are automatically generated from the development branch and may be unstable. Use Stable for production or everyday use.
+</Warning>
+
+## Installation instructions
+
+<Tabs>
+  <Tab title="Windows">
+    **System requirements:** Windows 10 or later (x64, x86, or ARM)
+
+    **Steps:**
+
+    <Steps>
+      <Step title="Download the installer">
+        Go to the [releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) and download one of the following:
+
+        - `ClashVerge_x.x.x_x64-setup.exe` — recommended for most users (64-bit)
+        - `ClashVerge_x.x.x_x64_en-US.msi` — MSI package for 64-bit systems
+        - `ClashVerge_x.x.x_x86-setup.exe` — for 32-bit systems
+        - `ClashVerge_x.x.x_arm64-setup.exe` — for ARM-based Windows devices
+      </Step>
+      <Step title="Run the installer">
+        Double-click the downloaded file and follow the on-screen prompts. The installer will place Clash Verge in your applications folder and create a Start Menu entry.
+      </Step>
+      <Step title="Launch the app">
+        Open **Clash Verge** from the Start Menu or the system tray after installation completes.
+      </Step>
+    </Steps>
+
+    <Note>
+      Older versions of Windows 10 may require [Microsoft WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) to be installed separately. Recent Windows 10/11 builds include it by default.
+    </Note>
+
+    <Info>
+      **Windows ARM users:** Building from source requires [LLVM](https://github.com/llvm/llvm-project/releases) (including `clang`) to be installed and its path added to your environment variables, because the `ring` crate depends on `clang` when targeting Windows ARM.
+    </Info>
+  </Tab>
+
+  <Tab title="macOS">
+    **System requirements:** macOS 11 (Big Sur) or later, Intel or Apple Silicon
+
+    <Steps>
+      <Step title="Download the DMG">
+        Go to the [releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) and download:
+
+        - `ClashVerge_x.x.x_x64.dmg` — for Intel Macs
+        - `ClashVerge_x.x.x_aarch64.dmg` — for Apple Silicon Macs (M1/M2/M3)
+
+        If you are unsure which chip your Mac has, go to **Apple menu → About This Mac**.
+      </Step>
+      <Step title="Open the DMG and drag to Applications">
+        Double-click the `.dmg` file, then drag the **Clash Verge** icon into your **Applications** folder.
+      </Step>
+      <Step title="Launch the app">
+        Open **Clash Verge** from **Applications** or Spotlight. On first launch, macOS may show a security prompt — click **Open** to proceed.
+      </Step>
+    </Steps>
+
+    <Tip>
+      If macOS blocks the app with "cannot be opened because the developer cannot be verified", right-click the app icon, select **Open**, and confirm in the dialog. This is a one-time step for apps distributed outside the App Store.
+    </Tip>
+  </Tab>
+
+  <Tab title="Linux">
+    **Supported architectures:** x64 (amd64), arm64
+
+    Choose the package format that matches your distribution:
+
+    <Steps>
+      <Step title="Download the package">
+        Go to the [releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) and select:
+
+        - `.deb` — Ubuntu, Debian, and derivatives
+        - `.rpm` — Fedora, RHEL, openSUSE, and derivatives
+        - `.AppImage` — any Linux distribution (portable, no installation needed)
+      </Step>
+      <Step title="Install system dependencies (Ubuntu/Debian)">
+        Before installing the `.deb` package, ensure the following libraries are available:
+
+        ```bash
+        sudo apt-get install -y \
+          libxslt1.1 \
+          libwebkit2gtk-4.1-dev \
+          libayatana-appindicator3-dev \
+          librsvg2-dev
+        ```
+      </Step>
+      <Step title="Install the package">
+        <CodeGroup>
+
+        ```bash .deb (Ubuntu/Debian)
+        sudo dpkg -i ClashVerge_x.x.x_amd64.deb
+        ```
+
+        ```bash .rpm (Fedora/RHEL)
+        sudo rpm -i ClashVerge_x.x.x_x86_64.rpm
+        ```
+
+        ```bash AppImage (any distro)
+        chmod +x ClashVerge_x.x.x_amd64.AppImage
+        ./ClashVerge_x.x.x_amd64.AppImage
+        ```
+
+        </CodeGroup>
+      </Step>
+      <Step title="Launch the app">
+        Start Clash Verge from your application launcher, or run it from the terminal. A system tray icon will appear when the app is running.
+      </Step>
+    </Steps>
+
+    <Note>
+      The AppImage is self-contained and does not require system library installation, but you must mark it as executable before running it (`chmod +x`).
+    </Note>
+  </Tab>
+</Tabs>
+
+## Next steps
+
+Once Clash Verge Rev is installed, follow the [quickstart guide](/quickstart) to import your first profile and start routing traffic.

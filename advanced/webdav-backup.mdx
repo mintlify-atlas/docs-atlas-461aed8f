@@ -1,0 +1,126 @@
+---
+title: 'Back Up Clash Verge Config with WebDAV'
+description: 'Sync your Clash Verge Rev profiles and configuration to any WebDAV server — Nextcloud, ownCloud, Box — with manual, scheduled, and on-change backup options.'
+keywords: ['clash verge rev', 'webdav', 'backup', 'nextcloud', 'owncloud', 'config sync', 'restore']
+---
+
+Clash Verge Rev can upload your configuration to any WebDAV-compatible server, giving you an off-device copy that survives reinstalls and lets you sync settings across machines. Compatible services include Nextcloud, ownCloud, Seafile, Box, and any server that speaks the WebDAV protocol.
+
+## What gets backed up
+
+A backup archive includes the following:
+
+- All proxy **profiles** (local, remote subscription, and merged)
+- `verge.yaml` — application settings and preferences
+- Clash config **overrides** and merge patches
+- Script profile files
+
+<Warning>
+The backup does not include the Mihomo (Clash Meta) core binary itself. After restoring to a new machine, you still need to install or download the core through the app's built-in updater.
+</Warning>
+
+## Configure WebDAV credentials
+
+<Steps>
+  <Step title="Open backup settings">
+    Go to **Settings > Backup**. Locate the WebDAV section.
+  </Step>
+  <Step title="Enter your server details">
+    Fill in the following fields:
+
+    | Field | Example |
+    |-------|---------|
+    | WebDAV URL | `https://cloud.example.com/remote.php/dav/files/username/ClashVerge/` |
+    | Username | Your WebDAV account username |
+    | Password | Your WebDAV account password |
+  </Step>
+  <Step title="Save credentials">
+    Click **Save**. The app validates the connection and stores your credentials encrypted in `verge.yaml`.
+  </Step>
+</Steps>
+
+<Note>
+Your WebDAV URL, username, and password are stored encrypted on disk using Clash Verge Rev's built-in encryption. They are never stored as plain text in `verge.yaml`.
+</Note>
+
+### Provider-specific URL formats
+
+<Tabs>
+  <Tab title="Nextcloud">
+    ```
+    https://your-nextcloud.example.com/remote.php/dav/files/YOUR_USERNAME/ClashVerge/
+    ```
+    Create the `ClashVerge` subdirectory in your Nextcloud Files view first, or the backup will fail with a 404.
+  </Tab>
+  <Tab title="ownCloud">
+    ```
+    https://your-owncloud.example.com/remote.php/webdav/ClashVerge/
+    ```
+  </Tab>
+  <Tab title="Seafile">
+    Use the Seafile WebDAV endpoint and point to a library or folder:
+    ```
+    https://your-seafile.example.com/seafdav/ClashVerge/
+    ```
+  </Tab>
+  <Tab title="Box">
+    ```
+    https://dav.box.com/dav/ClashVerge/
+    ```
+    Box requires an app password for WebDAV access if two-factor authentication is enabled on your account.
+  </Tab>
+</Tabs>
+
+## Manual backup
+
+To trigger a backup immediately, click **Backup Now** in **Settings > Backup**. The app creates a timestamped archive and uploads it to the configured WebDAV directory. You can see the list of uploaded backups in the same panel.
+
+## Automatic backup
+
+Clash Verge Rev supports two automatic backup triggers, both configurable from **Settings > Backup**:
+
+<CardGroup cols={2}>
+  <Card title="Scheduled backup" icon="clock">
+    Enable **Auto Backup Schedule** and set the interval in hours. The default interval is 24 hours. The app performs a backup in the background on the configured schedule.
+  </Card>
+  <Card title="On-change backup" icon="bell">
+    Enable **Backup on Change** to create a backup automatically whenever a critical configuration file is modified — such as when you update a profile or change a setting.
+  </Card>
+</CardGroup>
+
+The relevant `verge.yaml` fields that control this behavior are:
+
+```yaml
+enable_auto_backup_schedule: true
+auto_backup_interval_hours: 24
+auto_backup_on_change: true
+```
+
+## Restore from a backup
+
+<Steps>
+  <Step title="Open the backup list">
+    Go to **Settings > Backup**. The panel lists all backups stored on your WebDAV server with their timestamps.
+  </Step>
+  <Step title="Select a backup">
+    Click the backup file you want to restore.
+  </Step>
+  <Step title="Restore">
+    Click **Restore**. The app downloads the archive, unpacks it, and replaces the current configuration files.
+  </Step>
+  <Step title="Restart">
+    Restart Clash Verge Rev to apply the restored configuration fully.
+  </Step>
+</Steps>
+
+<Warning>
+Restoring a backup overwrites your current profiles and settings. There is no automatic undo. If you want to keep your current state, create a manual backup before restoring.
+</Warning>
+
+## Delete a backup
+
+Select a backup from the list in **Settings > Backup** and click the delete icon next to it. This removes the file from the WebDAV server permanently.
+
+## Local backup (no WebDAV)
+
+If you do not have a WebDAV server, Clash Verge Rev also supports local backups. Use **Settings > Backup > Create Local Backup** to save an archive to your filesystem. You can also import, export, and restore local backup files from the same panel.

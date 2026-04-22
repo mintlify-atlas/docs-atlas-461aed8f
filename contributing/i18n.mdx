@@ -1,0 +1,136 @@
+---
+title: "Add or Improve Clash Verge Rev Translations"
+description: "How to contribute translations to Clash Verge Rev: frontend JSON locale files, backend YAML bundles, tooling commands, and guidelines for adding a new language."
+---
+
+Clash Verge Rev supports 13 languages and welcomes contributions to existing translations or entirely new locales. The project keeps frontend strings in JSON files under `src/locales/` and backend (tray, notifications, dialogs) strings in YAML files under `crates/clash-verge-i18n/locales/`. This page explains how both sides work and how to contribute.
+
+## Supported languages
+
+The following locales are currently included:
+
+| Code | Language |
+|------|----------|
+| `en` | English |
+| `zh` | Simplified Chinese |
+| `zhtw` | Traditional Chinese |
+| `ar` | Arabic |
+| `de` | German |
+| `es` | Spanish |
+| `fa` | Persian |
+| `id` | Indonesian |
+| `jp` | Japanese |
+| `ko` | Korean |
+| `ru` | Russian |
+| `tr` | Turkish |
+| `tt` | Tatar |
+
+## Frontend locale structure
+
+```
+src/locales/
+  en/                  ← canonical reference
+    connections.json
+    home.json
+    shared.json
+    ...
+    index.ts           ← re-exports all namespaces
+  zh/
+    ...
+  <lang>/
+    ...
+```
+
+- Each JSON file is a **namespace** (e.g. `home.json` → keys accessed as `home.*`)
+- `shared.json` holds reusable vocabulary (button labels, validation messages, etc.)
+- `index.ts` aggregates all namespace imports — mirror the English file when adding namespaces
+- Languages must be listed in `supportedLanguages` inside `src/services/i18n.ts` to be available at runtime
+
+## Backend locale structure
+
+Native strings (tray menu, system notifications, dialogs) use `rust-i18n` with YAML files:
+
+```
+crates/clash-verge-i18n/locales/
+  en.yml
+  zh.yml
+  <lang>.yml
+```
+
+Missing keys fall back to the default language (`zh`), so keep key sets consistent across all YAML files.
+
+## Tooling commands
+
+| Command | What it does |
+|---|---|
+| `pnpm i18n:check` | Dry-run audit — finds missing or unused keys in frontend JSON and backend YAML |
+| `pnpm i18n:format` | Aligns key ordering, removes unused entries, syncs all locales with English |
+| `pnpm i18n:types` | Regenerates `src/types/generated/i18n-keys.ts` so TypeScript catches invalid key usage |
+
+Run all three after making translation changes:
+
+```bash
+pnpm i18n:format
+pnpm i18n:types
+pnpm i18n:check
+```
+
+## Adding a new language
+
+<Steps>
+  <Step title="Copy the English frontend locale">
+    ```bash
+    cp -r src/locales/en src/locales/<lang-code>
+    ```
+    Translate all JSON values while keeping keys and structure intact.
+  </Step>
+  <Step title="Update the locale index">
+    Edit `src/locales/<lang-code>/index.ts` to import every namespace, mirroring `src/locales/en/index.ts`.
+  </Step>
+  <Step title="Register the language">
+    Add the new language code to `supportedLanguages` in `src/services/i18n.ts`.
+  </Step>
+  <Step title="Add backend YAML (optional)">
+    Create `crates/clash-verge-i18n/locales/<lang-code>.yml` and translate the keys from `en.yml`.
+  </Step>
+  <Step title="Run tooling and preview">
+    ```bash
+    pnpm i18n:format
+    pnpm i18n:types
+    pnpm dev
+    ```
+    Navigate through affected views to verify the translations load correctly.
+  </Step>
+  <Step title="Open a pull request">
+    Include screenshots if any UI layout may be affected by text length changes.
+  </Step>
+</Steps>
+
+## Improving an existing translation
+
+1. Find the relevant JSON file in `src/locales/<lang>/`
+2. Use `src/locales/en/` as the reference for key intent
+3. Run `pnpm i18n:check` to spot missing or extra keys
+4. Run `pnpm i18n:format` to align structure
+5. Preview with `pnpm dev` and open a PR with screenshots where applicable
+
+## Authoring guidelines
+
+<AccordionGroup>
+  <Accordion title="Reuse shared vocabulary">
+    Check `shared.json` for common actions, statuses, and labels before introducing new phrases. Consistency across the UI matters.
+  </Accordion>
+  <Accordion title="Use semantic key names">
+    Prefer `systemProxy`, `updateInterval`, `autoRefresh` over positional names like `item1` or `dialogTitle2`.
+  </Accordion>
+  <Accordion title="Document placeholders">
+    Use `{{placeholder}}` syntax and make sure the calling component supplies all required values.
+  </Accordion>
+  <Accordion title="Keep strings concise">
+    Longer translations can break layouts. Note any concerns in your PR so reviewers can verify the UI at different screen sizes.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  For backend-only changes, no `pnpm prebuild` is needed — `tauri dev` and `tauri build` pick up YAML changes automatically.
+</Tip>

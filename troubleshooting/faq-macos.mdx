@@ -1,0 +1,180 @@
+---
+title: 'macOS FAQ: Clash Verge Rev Issues and Fixes'
+description: 'Fixes for common Clash Verge Rev problems on macOS, including Gatekeeper blocks, TUN system extensions, DNS leaks, and high CPU usage.'
+keywords: ['clash verge rev', 'macos', 'faq', 'troubleshooting', 'TUN mode', 'gatekeeper', 'system proxy', 'DNS leak']
+---
+
+Clash Verge Rev supports macOS 10.15 (Catalina) and later on both Intel and Apple Silicon Macs. Because macOS enforces strict application sandboxing, code signing verification, and network extension approvals, some features require explicit user consent before they work. The answers below walk through the most common setup and runtime issues.
+
+<AccordionGroup>
+  <Accordion title="App can't open — unidentified developer warning">
+    macOS Gatekeeper blocks applications that are not notarized by Apple or downloaded from the App Store. Clash Verge Rev is distributed outside the App Store, so you may see "Apple can't check it for malicious software" or "unidentified developer."
+
+    <Tabs>
+      <Tab title="Right-click method (recommended)">
+        <Steps>
+          <Step title="Locate the app in Finder">
+            Open **Finder** and navigate to the folder where you placed `Clash Verge Rev.app`, typically `/Applications`.
+          </Step>
+          <Step title="Right-click and open">
+            Hold **Control** and click the app icon, then select **Open** from the context menu.
+          </Step>
+          <Step title="Confirm the dialog">
+            A dialog will appear asking if you are sure you want to open an app from an unidentified developer. Click **Open**. macOS remembers this choice for future launches.
+          </Step>
+        </Steps>
+      </Tab>
+      <Tab title="System Settings method">
+        <Steps>
+          <Step title="Attempt to open the app">
+            Double-click the app. When Gatekeeper blocks it, note the dialog and close it.
+          </Step>
+          <Step title="Open System Settings">
+            Go to **System Settings > Privacy & Security** and scroll to the **Security** section. You will see a message about Clash Verge Rev being blocked.
+          </Step>
+          <Step title="Allow the app">
+            Click **Open Anyway** next to the blocked app entry. Enter your password if prompted.
+          </Step>
+        </Steps>
+      </Tab>
+    </Tabs>
+
+    <Warning>
+      Only open apps from sources you trust. Verify the download came from the official [Clash Verge Rev releases page](https://github.com/clash-verge-rev/clash-verge-rev/releases) by checking the file hash if provided.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="System proxy not applying to all apps">
+    macOS exposes a system-wide proxy setting that well-behaved apps are expected to respect, but many apps — especially Electron-based tools, some terminal emulators, and native apps with their own network stacks — ignore it entirely.
+
+    The most reliable solution is to use **TUN mode**, which intercepts traffic at the network adapter level before any app has a chance to bypass the proxy setting.
+
+    <Steps>
+      <Step title="Enable TUN mode">
+        In Clash Verge Rev, go to **Settings > System** and toggle on **TUN Mode**. Approve the system extension prompt that appears.
+      </Step>
+      <Step title="Set the TUN stack">
+        In the TUN settings, select **Mixed** or **System** for the stack type. **Mixed** generally offers the best compatibility on macOS.
+      </Step>
+      <Step title="Verify traffic routing">
+        Open a terminal and run `curl -v https://www.google.com`. The connection should route through your proxy. Check the **Connections** panel in Clash Verge Rev to confirm traffic appears.
+      </Step>
+    </Steps>
+
+    <Note>
+      System proxy mode still works well for most browsers and HTTP-aware tools. TUN mode is only necessary when you need every process on the system, including those that do not respect proxy environment variables, to route through Clash.
+    </Note>
+  </Accordion>
+
+  <Accordion title="TUN mode requires system extension approval">
+    TUN mode on macOS uses a Network Extension (system extension) to create the virtual adapter. macOS requires explicit user approval before any system extension can load.
+
+    <Steps>
+      <Step title="Attempt to enable TUN mode">
+        Toggle **TUN Mode** on in **Settings > System**. A system dialog will appear stating that a system extension is blocked.
+      </Step>
+      <Step title="Open Privacy & Security settings">
+        Click **Open System Settings** in the dialog, or navigate manually to **System Settings > Privacy & Security**.
+      </Step>
+      <Step title="Allow the extension">
+        Scroll to the **Security** section and click **Allow** next to the Clash Verge Rev system extension entry. Enter your password or use Touch ID when prompted.
+      </Step>
+      <Step title="Restart if required">
+        macOS may ask you to restart the machine for the extension to take effect. After restarting, re-enable TUN mode.
+      </Step>
+    </Steps>
+
+    <Warning>
+      On macOS Ventura (13) and later, you may need to disable System Integrity Protection (SIP) in a virtual machine environment before system extensions can load. This is not required on physical Macs.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="App removed from menu bar after macOS update">
+    macOS major version upgrades occasionally reset Login Items, which can cause Clash Verge Rev to no longer launch at startup and disappear from the menu bar on the next reboot.
+
+    <Steps>
+      <Step title="Re-enable Login Items">
+        Go to **System Settings > General > Login Items** and check whether Clash Verge Rev is listed and enabled. If it is missing, click the **+** button and add the app from `/Applications`.
+      </Step>
+      <Step title="Enable Auto Launch in the app">
+        Open Clash Verge Rev, go to **Settings > General**, and ensure **Auto Launch** is toggled on. This writes a new Login Items entry.
+      </Step>
+      <Step title="Verify the tray icon">
+        Log out and log back in. The Clash Verge Rev icon should appear in the menu bar within a few seconds of login.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="Permission dialog appears every launch">
+    If macOS repeatedly prompts for network access or other permissions each time you open the app, the permission has not been permanently granted or the app's code signature changed between updates.
+
+    <Steps>
+      <Step title="Grant permission permanently">
+        When the permission dialog appears, click **Allow** (not "Allow Once"). macOS stores this choice per app bundle based on its code signature.
+      </Step>
+      <Step title="Check System Settings">
+        Go to **System Settings > Privacy & Security > Local Network** (or the relevant permission category) and confirm Clash Verge Rev has a checkmark.
+      </Step>
+      <Step title="Reset permissions if stuck">
+        If the dialog keeps appearing after granting permission, open Terminal and run:
+
+        ```bash
+        tccutil reset All com.clash-verge-rev.app
+        ```
+
+        Then relaunch the app and grant all permissions fresh.
+      </Step>
+    </Steps>
+  </Accordion>
+
+  <Accordion title="DNS leaks with TUN mode">
+    Even with TUN mode enabled, DNS queries can bypass the proxy and go directly to your ISP's resolver if the Mihomo DNS configuration is not set to intercept them.
+
+    <Steps>
+      <Step title="Enable DNS override in your profile">
+        Add or update the `dns` section in your profile configuration to enable the fake-ip or redir-host mode:
+
+        ```yaml
+        dns:
+          enable: true
+          enhanced-mode: fake-ip
+          nameserver:
+            - 1.1.1.1
+            - 8.8.8.8
+          fake-ip-filter:
+            - '*.lan'
+            - localhost.ptlogin2.qq.com
+        ```
+      </Step>
+      <Step title="Set override-dns in TUN settings">
+        In Clash Verge Rev, go to **Settings > System > TUN Mode** and enable **Override DNS**. This forces the system DNS resolver to route through Mihomo.
+      </Step>
+      <Step title="Verify with a DNS leak test">
+        Visit a DNS leak test site (search for "DNS leak test") to confirm that queries resolve through your proxy's nameservers rather than your local ISP.
+      </Step>
+    </Steps>
+
+    <Note>
+      The `fake-ip-filter` list prevents common local hostnames from being intercepted, which avoids breaking LAN discovery and some app-specific DNS requirements.
+    </Note>
+  </Accordion>
+
+  <Accordion title="High CPU usage">
+    Clash Verge Rev can consume elevated CPU on macOS due to the animated traffic graph, verbose logging, or a very high-traffic workload being processed by the Mihomo core.
+
+    <Steps>
+      <Step title="Disable the traffic graph animation">
+        Go to **Settings > General** and turn off **Traffic Graph** or reduce its update interval. Rendering continuous animations is GPU and CPU-intensive on some configurations.
+      </Step>
+      <Step title="Reduce the log level">
+        Go to **Settings > Clash** and change **Log Level** from `Info` to `Warning` or `Error`. This significantly reduces the volume of data the core writes and the UI processes.
+      </Step>
+      <Step title="Enable auto log cleanup">
+        In **Settings > General**, enable **Auto Log Clean** to prevent log files from growing unboundedly on disk, which can slow I/O over time.
+      </Step>
+      <Step title="Check for runaway connections">
+        Open the **Connections** tab in the app. If a single process is generating thousands of short-lived connections per second, that process may be misconfigured. Identify it and add a rule to handle it directly.
+      </Step>
+    </Steps>
+  </Accordion>
+</AccordionGroup>

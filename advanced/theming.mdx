@@ -1,0 +1,127 @@
+---
+title: 'Customize Clash Verge Rev with Themes and CSS'
+description: 'Change the look of Clash Verge Rev using light, dark, or system theme modes, a custom accent color, CSS injection, and optional background images.'
+keywords: ['clash verge rev', 'theme', 'dark mode', 'css injection', 'custom css', 'appearance']
+---
+
+Clash Verge Rev gives you full control over its appearance. You can switch between light, dark, and system-synced modes, pick a custom accent color, inject arbitrary CSS into the UI, and set a background image — all without touching any config files directly.
+
+## Theme mode
+
+The theme mode setting controls the overall color scheme of the application. Navigate to **Settings > Appearance > Theme Mode** and choose one of three options:
+
+| Mode | Behavior |
+|------|----------|
+| `light` | Always uses the light color scheme |
+| `dark` | Always uses the dark color scheme |
+| `system` | Follows the OS light/dark preference automatically (default) |
+
+The `system` default means the app switches automatically when you toggle your OS appearance setting. No restart is required.
+
+## Primary color
+
+The accent color appears on active elements, buttons, and selection highlights throughout the UI. To change it, go to **Settings > Appearance > Primary Color** and use the color picker to select any hex value you want.
+
+<Tip>
+The primary color you set is stored as `primary_color` in the `theme_setting` block of `verge.yaml`. You can also edit this file directly if you prefer.
+</Tip>
+
+## Theme color fields
+
+Beyond the primary accent, the `IVergeTheme` struct exposes several additional color slots you can customize:
+
+<AccordionGroup>
+  <Accordion title="primary_color">
+    The main accent color used for buttons, active states, and focus rings.
+  </Accordion>
+  <Accordion title="secondary_color">
+    A supporting accent color used for secondary interactive elements.
+  </Accordion>
+  <Accordion title="primary_text / secondary_text">
+    Control the default text colors for primary and secondary content.
+  </Accordion>
+  <Accordion title="info_color / error_color / warning_color / success_color">
+    Semantic status colors used in alerts, badges, and status indicators across the app.
+  </Accordion>
+  <Accordion title="font_family">
+    Override the default UI font. Accepts any font name available on your system (e.g. `"JetBrains Mono"`, `"Inter"`).
+  </Accordion>
+</AccordionGroup>
+
+## CSS injection
+
+CSS injection lets you paste custom CSS that the app applies directly to the web-based UI layer. This makes it possible to restyle virtually any element — hiding sidebar items, changing spacing, overriding colors, or replacing fonts.
+
+To add custom CSS, go to **Settings > Appearance > CSS Injection** and paste your styles into the text area.
+
+### Example: change the UI font
+
+```css
+* {
+  font-family: "JetBrains Mono", monospace !important;
+}
+```
+
+### Example: hide specific sidebar navigation items
+
+```css
+/* Hide the "Connections" sidebar entry */
+[data-page="connections"] {
+  display: none !important;
+}
+```
+
+### Example: customize the sidebar background
+
+```css
+.layout-sidebar {
+  background-color: #1a1a2e !important;
+}
+```
+
+### Example: increase proxy card font size
+
+```css
+.proxy-item .proxy-name {
+  font-size: 14px !important;
+}
+```
+
+<Warning>
+If you paste invalid CSS, the entire UI may shift, break layout, or become unresponsive. To recover, open **Settings > Appearance > CSS Injection**, clear the text area, and save. If the window is inaccessible, you can edit `verge.yaml` directly and clear the `css_injection` field under `theme_setting`, then restart the app.
+</Warning>
+
+<Tip>
+Use the built-in window inspector to find CSS selectors before writing styles. Right-click anywhere in the app and choose **Inspect Element** (if the developer tools option is enabled) to browse the DOM and identify class names and data attributes.
+</Tip>
+
+## Background image
+
+You can set a custom background image that renders behind the main content area. Go to **Settings > Appearance > Background Image** and select an image file from your filesystem.
+
+<Note>
+For best results, use a high-resolution image that matches your display resolution. Semi-transparent overlay colors in the sidebar and cards will still show on top of the image.
+</Note>
+
+## Custom theme presets
+
+If you want to share or version-control your theme configuration, you can export your current `theme_setting` block from `verge.yaml` and save it as a preset file. To apply a preset, paste the values back into the appropriate fields in Settings or directly into `verge.yaml`.
+
+A complete `theme_setting` block looks like this:
+
+```yaml
+theme_setting:
+  primary_color: "#5865f2"
+  secondary_color: "#4752c4"
+  primary_text: "#ffffff"
+  secondary_text: "#b9bbbe"
+  info_color: "#3498db"
+  error_color: "#e74c3c"
+  warning_color: "#f39c12"
+  success_color: "#2ecc71"
+  font_family: "Inter"
+  css_injection: |
+    .layout-sidebar {
+      background-color: rgba(30, 31, 48, 0.95) !important;
+    }
+```
